@@ -11,6 +11,10 @@ export class ExercisesService {
   ) {}
 
   async findAll(): Promise<Exercise[]> {
-    return this.exerciseRepository.find();
+    return this.exerciseRepository.find({
+      select: ['id', 'name', 'image'],
+      order: { name: 'ASC' },
+      relations: ['exerciseMuscles', 'exerciseMuscles.muscle'],
+    });
   }
 }

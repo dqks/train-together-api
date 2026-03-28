@@ -1,8 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { ExerciseMuscle } from '../exercises-muscles/exercises-muscle.entity';
 
-@Entity({ name: 'default_exercises' })
+@Entity({ name: 'exercises' })
 export class Exercise {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('increment', { name: 'id' })
   id: number;
 
   @Column({
@@ -54,4 +55,7 @@ export class Exercise {
     type: 'smallint',
   })
   exerciseProgressionTypeId: number;
+
+  @OneToMany(() => ExerciseMuscle, (exerciseMuscle) => exerciseMuscle.exercise)
+  exerciseMuscles: ExerciseMuscle[];
 }
