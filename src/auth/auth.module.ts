@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersModule } from 'src/users/users.module';
@@ -9,7 +9,7 @@ import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    UsersModule,
+    forwardRef(() => UsersModule),
     TypeOrmModule.forFeature([User]),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -22,5 +22,6 @@ import { ConfigService } from '@nestjs/config';
   ],
   providers: [AuthService],
   controllers: [AuthController],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
