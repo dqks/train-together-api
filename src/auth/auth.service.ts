@@ -1,29 +1,64 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/users/user.entity';
-import { Repository } from 'typeorm';
+import { compare } from 'bcrypt';
+import { RegistrationDto } from './dto/registration.dto';
+import { UsersService } from '../users/users.service';
+import { User } from '../users/user.entity';
+import { LoginDto } from './dto/login.dto';
 
-//TODO выполнить работу с хешированным паролем
 @Injectable()
 export class AuthService {
-    constructor(
-        @InjectRepository(User)
-        private userRepository: Repository<User>,
-        private jwtService: JwtService
-      ) {}
+  constructor(
+    private userService: UsersService,
+    private jwtService: JwtService,
+  ) {}
 
-    async signIn(email: string, pass: string): Promise<any> {
-      const user = await this.userRepository.findOneBy({ email });
-      if (user?.password !== pass) {
-        throw new UnauthorizedException();
-      }
-      const payload = { sub: user.id, email: user.email };
-      const accessToken = await this.jwtService.signAsync(payload)
-      return {
-        id: user.id,
-        email: user.email,
-        role: user.roleId
-      };
+  async registration(registrationDto: RegistrationDto) {
+    const candidate = await this.userService.getUserByEmail(
+      registrationDto.email,
+    );
+
+    if (candidate) {
+      throw new HttpException(
+        'Пользователь с таким email уже существует',
+        HttpStatus.BAD_REQUEST,
+      );
     }
+
+    const user = await this.userService.createUser(registrationDto);
+    return this.generateToken(user);
+  }
+
+  private generateToken(user: User) {
+    const payload = { sub: user.id, email: user.email };
+    return {
+      token: this.jwtService.sign(payload),
+    };
+  }
+
+  private async validateUser(loginDto: LoginDto) {
+    const user = await this.userService.getUserByEmail(loginDto.email);
+
+    if (!user) {
+      throw new UnauthorizedException({ message: 'Неверная почта или пароль' });
+    }
+
+    const isMatch = await compare(loginDto.password, user?.password);
+
+    if (!isMatch) {
+      throw new UnauthorizedException({ message: 'Неверная почта или пароль' });
+    }
+
+    return user;
+  }
+
+  async login(loginDto: LoginDto) {
+    const user = await this.validateUser(loginDto);
+    return this.generateToken(user);
+  }
 }
