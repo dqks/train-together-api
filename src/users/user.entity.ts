@@ -43,7 +43,7 @@ export class User {
     name: 'password',
     type: 'text',
     nullable: false,
-    select: false, // Не возвращается в SELECT запросах по умолчанию
+    // select: false, // Не возвращается в SELECT запросах по умолчанию
   })
   password: string;
 

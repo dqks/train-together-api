@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MusclesModule } from './muscles/muscles.module';
 import { ExercisesMusclesModule } from './exercises-muscles/exercises-muscles.module';
 import { TrainingProgramsModule } from './training-programs/training-programs.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { TrainingProgramsModule } from './training-programs/training-programs.mo
     MusclesModule,
     ExercisesMusclesModule,
     TrainingProgramsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
