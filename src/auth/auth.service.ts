@@ -19,10 +19,11 @@ export class AuthService {
         throw new UnauthorizedException();
       }
       const payload = { sub: user.id, email: user.email };
+      const accessToken = await this.jwtService.signAsync(payload)
       return {
-        // 💡 Here the JWT secret key that's used for signing the payload 
-        // is the key that was passed in the JwtModule
-        access_token: await this.jwtService.signAsync(payload),
+        id: user.id,
+        email: user.email,
+        role: user.roleId
       };
     }
 }
