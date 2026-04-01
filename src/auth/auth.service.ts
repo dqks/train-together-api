@@ -1,8 +1,8 @@
 import {
+  BadRequestException,
   HttpException,
   HttpStatus,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare } from 'bcrypt';
@@ -19,15 +19,24 @@ export class AuthService {
   ) {}
 
   async registration(registrationDto: RegistrationDto) {
-    const candidate = await this.userService.getUserByEmail(
+    const checkIfEmailUsed = await this.userService.getUserByEmail(
       registrationDto.email,
     );
 
-    if (candidate) {
-      throw new HttpException(
-        'Пользователь с таким email уже существует',
-        HttpStatus.BAD_REQUEST,
-      );
+    if (checkIfEmailUsed) {
+      throw new BadRequestException({
+        nickname: 'Пользователь с таким email уже существует',
+      });
+    }
+
+    const checkIfNicknameUsed = await this.userService.getUserByNickname(
+      registrationDto.nickname,
+    );
+
+    if (checkIfNicknameUsed) {
+      throw new BadRequestException({
+        nickname: 'Пользователь с таким никнеймом уже существует',
+      });
     }
 
     const user = await this.userService.createUser(registrationDto);
@@ -45,13 +54,19 @@ export class AuthService {
     const user = await this.userService.getUserByEmail(loginDto.email);
 
     if (!user) {
-      throw new UnauthorizedException({ message: 'Неверная почта или пароль' });
+      throw new HttpException(
+        'Неверная почта или пароль',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const isMatch = await compare(loginDto.password, user?.password);
 
     if (!isMatch) {
-      throw new UnauthorizedException({ message: 'Неверная почта или пароль' });
+      throw new HttpException(
+        'Неверная почта или пароль',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     return user;

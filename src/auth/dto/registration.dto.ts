@@ -1,15 +1,15 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class RegistrationDto {
-  @IsEmail()
+  @IsEmail({}, { message: 'Почта должна быть верного формата' })
   readonly email: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Никнейм обязателен' })
   readonly nickname: string;
 
   @IsString()
-  @IsNotEmpty()
-  @MinLength(6)
+  @IsNotEmpty({ message: 'Пароль обязателен' })
+  @MinLength(6, { message: 'Длина должна быть минимум 6 символов' })
   readonly password: string;
 }

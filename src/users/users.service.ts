@@ -27,7 +27,14 @@ export class UsersService {
   async getUserByEmail(email: string): Promise<User | null> {
     return await this.usersRepository.findOne({
       where: { email },
-      select: ['id', 'email', 'password', 'roleId'],
+      select: ['id', 'email', 'nickname', 'password', 'roleId'],
+    });
+  }
+
+  async getUserByNickname(nickname: string): Promise<User | null> {
+    return await this.usersRepository.findOne({
+      where: { nickname },
+      select: ['id', 'email', 'nickname', 'password', 'roleId'],
     });
   }
 
