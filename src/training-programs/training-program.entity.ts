@@ -1,4 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { ManyToOne } from 'typeorm/browser/decorator/relations/ManyToOne.js';
+import { User } from '../users/user.entity';
 
 @Entity({ name: 'training_programs' })
 export class TrainingProgram {
@@ -28,8 +30,11 @@ export class TrainingProgram {
   image: string;
 
   @Column({ name: 'public', type: 'boolean', nullable: false })
-  public: boolean;
+  isPublic: boolean;
 
   @Column({ name: 'created_at', type: 'date', nullable: true })
   createdAt: boolean;
+
+  // @ManyToOne(() => User, (user) => user.photos)
+  // user: User;
 }

@@ -10,6 +10,8 @@ import { ExercisesMusclesModule } from './exercises-muscles/exercises-muscles.mo
 import { TrainingProgramsModule } from './training-programs/training-programs.module';
 import { AuthModule } from './auth/auth.module';
 import { RolesModule } from './roles/roles.module';
+import { EquipmentController } from './equipment/equipment.controller';
+import { EquipmentModule } from './equipment/equipment.module';
 
 @Module({
   imports: [
@@ -31,12 +33,13 @@ import { RolesModule } from './roles/roles.module';
       }),
       inject: [ConfigService],
     }),
+    AuthModule,
     UsersModule,
     ExercisesModule,
     MusclesModule,
+    EquipmentModule,
     ExercisesMusclesModule,
     TrainingProgramsModule,
-    AuthModule,
     RolesModule,
   ],
   controllers: [AppController],
