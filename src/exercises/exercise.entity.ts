@@ -56,6 +56,13 @@ export class Exercise {
   })
   exerciseProgressionTypeId: number;
 
+  @Column({
+    name: 'id_user',
+    nullable: true,
+    type: 'integer',
+  })
+  userId: number;
+
   @OneToMany(() => ExerciseMuscle, (exerciseMuscle) => exerciseMuscle.exercise)
   exerciseMuscles: ExerciseMuscle[];
 }

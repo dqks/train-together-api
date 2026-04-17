@@ -10,8 +10,9 @@ import { ExercisesMusclesModule } from './exercises-muscles/exercises-muscles.mo
 import { TrainingProgramsModule } from './training-programs/training-programs.module';
 import { AuthModule } from './auth/auth.module';
 import { RolesModule } from './roles/roles.module';
-import { EquipmentController } from './equipment/equipment.controller';
 import { EquipmentModule } from './equipment/equipment.module';
+import { ExerciseTypesModule } from './exercise-types/exercise-types.module';
+import { ExerciseProgressionTypesModule } from './exercise-progression-types/exercise-progression-types.module';
 
 @Module({
   imports: [
@@ -41,6 +42,8 @@ import { EquipmentModule } from './equipment/equipment.module';
     ExercisesMusclesModule,
     TrainingProgramsModule,
     RolesModule,
+    ExerciseTypesModule,
+    ExerciseProgressionTypesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

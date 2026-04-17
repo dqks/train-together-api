@@ -4,6 +4,8 @@ import { Exercise } from './exercise.entity';
 import { Repository } from 'typeorm';
 import { ExerciseResponse } from './exercise.response';
 import { Muscle } from '../muscles/muscle.entity';
+import { CreateExerciseDto } from './dto/create-exercise.dto';
+import { CustomRequest } from '../common/types/custom-request';
 
 @Injectable()
 export class ExercisesService {
@@ -37,5 +39,27 @@ export class ExercisesService {
         nameEng: muscle.muscle.nameEng,
       })) as Muscle[],
     }));
+  }
+
+  async createExercise(
+    createExerciseDto: CreateExerciseDto,
+    req: CustomRequest,
+  ) {
+    const userId = req.user.userId;
+    const newExercise = this.exerciseRepository.create({
+      userId,
+      name: createExerciseDto.name,
+      advice: 'u',
+      description: 'u',
+      technique: 'u',
+      exerciseTypeId: 1,
+      exerciseProgressionTypeId: 1,
+    });
+
+    await this.exerciseRepository.save(newExercise);
+
+    return {
+      success: true,
+    };
   }
 }
