@@ -1,5 +1,5 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { ExerciseMuscle } from '../exercises-muscles/exercises-muscle.entity';
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Exercise } from '../exercises/exercise.entity';
 
 @Entity({ name: 'muscles' })
 export class Muscle {
@@ -12,7 +12,7 @@ export class Muscle {
     type: 'character varying',
     length: 70,
   })
-  name: number;
+  name: string;
 
   @Column({
     name: 'name_en',
@@ -20,8 +20,8 @@ export class Muscle {
     type: 'character varying',
     length: 70,
   })
-  nameEng: number;
+  nameEng: string;
 
-  @OneToMany(() => ExerciseMuscle, (exerciseMuscle) => exerciseMuscle.muscle)
-  exerciseMuscle: ExerciseMuscle[];
+  @ManyToMany(() => Exercise, (exercise) => exercise.muscles)
+  exercises: Exercise[];
 }

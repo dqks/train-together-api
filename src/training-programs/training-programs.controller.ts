@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { TrainingProgramsService } from './training-programs.service';
 import { TrainingProgram } from './training-program.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -30,5 +39,11 @@ export class TrainingProgramsController {
       createProgramDto,
       req,
     );
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  deleteTrainingProgram(@Param('id') id: string, @Req() req: CustomRequest) {
+    return this.trainingProgramService.deleteTrainingProgram(+id, req);
   }
 }

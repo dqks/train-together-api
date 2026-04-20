@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ExercisesService } from './exercises.service';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import type { CustomRequest } from '../common/types/custom-request';
@@ -10,7 +19,7 @@ export class ExercisesController {
 
   @Get()
   findAll() {
-    return this.exerciseService.findAll();
+    return this.exerciseService.findAllDefault();
   }
 
   @Post()
@@ -20,5 +29,11 @@ export class ExercisesController {
     @Req() req: CustomRequest,
   ) {
     return this.exerciseService.createExercise(createExerciseDto, req);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  deleteExercise(@Param('id') id: string, @Req() req: CustomRequest) {
+    return this.exerciseService.deleteExercise(+id, req);
   }
 }

@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmpty,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class CreateExerciseDto {
   @IsString()
@@ -6,17 +12,19 @@ export class CreateExerciseDto {
   @MinLength(5)
   readonly name: string;
 
-  // @IsString()
-  // @IsNotEmpty()
-  // @MinLength(5)
-  // @MaxLength(2500)
-  // readonly description: string;
-  //
-  // @IsBoolean()
-  // @IsNotEmpty()
-  // readonly isPublic: string;
+  @IsInt()
+  @IsNotEmpty()
+  exerciseProgressionTypeId: number;
 
-  // @IsString()
-  // @IsEmpty()
-  // readonly image: string;
+  @IsInt()
+  @IsNotEmpty()
+  primaryMuscleId: number;
+
+  @IsInt()
+  @IsEmpty()
+  secondaryMuscleId: number;
+
+  @IsInt()
+  @IsNotEmpty()
+  equipmentId: number;
 }

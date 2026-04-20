@@ -13,4 +13,12 @@ export class ExerciseTypesService {
   async getAll() {
     return this.exerciseTypeRepository.find();
   }
+
+  async getUserProgressionType() {
+    return await this.exerciseTypeRepository.findOne({
+      where: {
+        name: 'Пользовательское',
+      },
+    });
+  }
 }

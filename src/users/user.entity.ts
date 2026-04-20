@@ -7,8 +7,11 @@ import {
   Check,
   Unique,
   BeforeInsert,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { hash } from 'bcrypt';
+import { Role } from '../roles/role.entity';
 // import { Gender } from '../../genders/entities/gender.entity';
 // import { Role } from '../../roles/entities/role.entity';
 
@@ -103,7 +106,7 @@ export class User {
   // gender: Gender;
 
   // Связь с таблицей roles
-  // @ManyToOne(() => Role, { onDelete: 'CASCADE' })
-  // @JoinColumn({ name: 'id_role', referencedColumnName: 'id' })
-  // role: Role;
+  @ManyToOne(() => Role, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'id_role', referencedColumnName: 'id' })
+  role: Role;
 }

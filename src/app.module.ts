@@ -6,7 +6,6 @@ import { UsersModule } from './users/users.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MusclesModule } from './muscles/muscles.module';
-import { ExercisesMusclesModule } from './exercises-muscles/exercises-muscles.module';
 import { TrainingProgramsModule } from './training-programs/training-programs.module';
 import { AuthModule } from './auth/auth.module';
 import { RolesModule } from './roles/roles.module';
@@ -39,7 +38,6 @@ import { ExerciseProgressionTypesModule } from './exercise-progression-types/exe
     ExercisesModule,
     MusclesModule,
     EquipmentModule,
-    ExercisesMusclesModule,
     TrainingProgramsModule,
     RolesModule,
     ExerciseTypesModule,

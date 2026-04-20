@@ -1,5 +1,16 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { ExerciseMuscle } from '../exercises-muscles/exercises-muscle.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { ExerciseProgressionType } from '../exercise-progression-types/exercise-progression-type.entity';
+import { ExerciseType } from '../exercise-types/exercise-type.entity';
+import { Muscle } from '../muscles/muscle.entity';
+import { Equipment } from '../equipment/equipment.entity';
 
 @Entity({ name: 'exercises' })
 export class Exercise {
@@ -63,6 +74,33 @@ export class Exercise {
   })
   userId: number;
 
-  @OneToMany(() => ExerciseMuscle, (exerciseMuscle) => exerciseMuscle.exercise)
-  exerciseMuscles: ExerciseMuscle[];
+  @ManyToMany(() => Muscle, (muscle) => muscle.exercises)
+  @JoinTable({
+    name: 'exercises_muscles',
+    joinColumn: { name: 'id_exercise', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'id_muscle', referencedColumnName: 'id' },
+  })
+  muscles: Muscle[];
+
+  @ManyToMany(() => Equipment, (equipment) => equipment.exercises)
+  @JoinTable({
+    name: 'exercises_equipment',
+    joinColumn: { name: 'id_exercise', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'id_equipment', referencedColumnName: 'id' },
+  })
+  equipment: Equipment[];
+
+  @ManyToOne(() => ExerciseType, { onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'id_exercise_type',
+    referencedColumnName: 'id',
+  })
+  exerciseType: ExerciseType;
+
+  @ManyToOne(() => ExerciseProgressionType, { onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'id_exercise_progression_type',
+    referencedColumnName: 'id',
+  })
+  exerciseProgressionType: ExerciseProgressionType;
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TrainingProgram } from './training-program.entity';
@@ -31,8 +31,6 @@ export class TrainingProgramsService {
   ) {
     const userId = req.user.userId;
 
-    console.log('USER ID ID ID IDID', userId);
-
     const newProgram = this.programRepository.create({
       userId: userId,
       name: createProgramDto.name,
@@ -46,5 +44,21 @@ export class TrainingProgramsService {
     return {
       success: true,
     };
+  }
+  async deleteTrainingProgram(id: number, req: CustomRequest) {
+    try {
+      const program = await this.programRepository.findOne({ where: { id } });
+
+      if (program?.userId !== req.user.userId) {
+        throw new HttpException(
+          'Программа не пользователя',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      await this.programRepository.delete(id);
+      return { success: true };
+    } catch (e) {
+      throw new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }
