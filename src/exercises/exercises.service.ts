@@ -30,6 +30,10 @@ export class ExercisesService {
     });
   }
 
+  async findOne(id: number) {
+    return await this.exerciseRepository.findOne({ where: { id } });
+  }
+
   async getUserExercises(userId: number) {
     return this.exerciseRepository.find({ where: { userId } });
   }

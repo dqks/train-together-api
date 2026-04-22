@@ -13,20 +13,19 @@ import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import type { Response, Request } from 'express';
 import { JwtAuthGuard } from './jwt-auth.guard';
-// import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
+import type { CustomRequest } from '../common/types/custom-request';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
     private jwtService: JwtService,
-    private configService: ConfigService,
   ) {}
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  me(@Req() req: Request) {
+  me(@Req() req: CustomRequest) {
     return this.authService.me(req);
   }
 
@@ -40,30 +39,7 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const user = await this.authService.validateUser(loginDto);
-
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      nickname: user.nickname,
-    };
-    const token = this.jwtService.sign(payload, {
-      expiresIn: '15m',
-      secret: this.configService.get('JWT_SECRET'),
-    });
-
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 15 * 1000 * 60,
-    });
-
-    return {
-      id: user.id,
-      email: user.email,
-      nickname: user.nickname,
-    };
+    return this.authService.login(loginDto, res);
   }
 
   @Post('logout')

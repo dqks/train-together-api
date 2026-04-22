@@ -22,6 +22,11 @@ export class ExercisesController {
     return this.exerciseService.findAllDefault();
   }
 
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.exerciseService.findOne(+id);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard)
   createExercise(
