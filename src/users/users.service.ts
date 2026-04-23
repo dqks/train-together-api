@@ -33,6 +33,14 @@ export class UsersService {
     });
   }
 
+  async getUserByEmailWithFollowed(email: string): Promise<User | null> {
+    return await this.usersRepository.findOne({
+      where: { email },
+      select: ['id', 'email', 'nickname', 'password', 'roleId'],
+      relations: ['followedPrograms'],
+    });
+  }
+
   async getUserByNickname(nickname: string): Promise<User | null> {
     return await this.usersRepository.findOne({
       where: { nickname },

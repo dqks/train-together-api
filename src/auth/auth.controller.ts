@@ -11,9 +11,8 @@ import { AuthService } from './auth.service';
 import { RegistrationDto } from './dto/registration.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import type { Response, Request } from 'express';
+import type { Request, Response } from 'express';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { ConfigService } from '@nestjs/config';
 import type { CustomRequest } from '../common/types/custom-request';
 
 @Controller('auth')

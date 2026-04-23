@@ -9,24 +9,47 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { TrainingProgramsService } from './training-programs.service';
-import { TrainingProgram } from './training-program.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateProgramDto } from './dto/create-program.dto';
 import type { CustomRequest } from '../common/types/custom-request';
+import type { Request } from 'express';
 
 @Controller('training-programs')
 export class TrainingProgramsController {
   constructor(private trainingProgramService: TrainingProgramsService) {}
 
   @Get()
-  getAllPublicTrainingPrograms(): Promise<TrainingProgram[]> {
+  getAllPublicTrainingPrograms() {
     return this.trainingProgramService.getAllPublicTrainingPrograms();
   }
 
   @Get('/my')
   @UseGuards(JwtAuthGuard)
-  getMyTrainingPrograms(@Req() req: CustomRequest): Promise<TrainingProgram[]> {
+  getMyTrainingPrograms(@Req() req: CustomRequest) {
     return this.trainingProgramService.getMyTrainingPrograms(req);
+  }
+
+  @Post('/subscribe/:id')
+  @UseGuards(JwtAuthGuard)
+  subscribeTrainingPrograms(
+    @Param('id') id: string,
+    @Req() req: CustomRequest,
+  ) {
+    return this.trainingProgramService.subscribeTrainingPrograms(+id, req);
+  }
+
+  @Delete('/subscribe/:id')
+  @UseGuards(JwtAuthGuard)
+  unsubscribeTrainingPrograms(
+    @Param('id') id: string,
+    @Req() req: CustomRequest,
+  ) {
+    return this.trainingProgramService.unsubscribeTrainingPrograms(+id, req);
+  }
+
+  @Get(':id')
+  getTrainingProgram(@Param('id') id: string, @Req() req: Request) {
+    return this.trainingProgramService.getTrainingProgram(Number(id), req);
   }
 
   @Post()

@@ -1,19 +1,18 @@
 import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  // ManyToOne,
-  // JoinColumn,
-  Check,
-  Unique,
   BeforeInsert,
-  ManyToOne,
+  Check,
+  Column,
+  Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import { hash } from 'bcrypt';
 import { Role } from '../roles/role.entity';
-// import { Gender } from '../../genders/entities/gender.entity';
-// import { Role } from '../../roles/entities/role.entity';
+import { TrainingProgram } from '../training-programs/training-program.entity';
 
 @Entity({ name: 'users' })
 @Unique('uq_users_email', ['email'])
@@ -100,6 +99,7 @@ export class User {
   async hashPassword() {
     this.password = await hash(this.password, 12);
   }
+
   // Связь с таблицей genders
   // @ManyToOne(() => Gender, { onDelete: 'CASCADE' })
   // @JoinColumn({ name: 'id_gender', referencedColumnName: 'id' })
@@ -109,4 +109,21 @@ export class User {
   @ManyToOne(() => Role, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_role', referencedColumnName: 'id' })
   role: Role;
+
+  // @OneToMany(() => TrainingProgram)
+  // trainingPrograms: TrainingProgram[];
+
+  @ManyToMany(() => TrainingProgram, (program) => program.followers)
+  @JoinTable({
+    name: 'followed_training_programs', // имя связующей таблицы
+    joinColumn: {
+      name: 'id_user',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'id_training_program',
+      referencedColumnName: 'id',
+    },
+  })
+  followedPrograms: TrainingProgram[];
 }

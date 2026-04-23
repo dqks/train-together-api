@@ -1,5 +1,11 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { ManyToOne } from 'typeorm/browser/decorator/relations/ManyToOne.js';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from '../users/user.entity';
 
 @Entity({ name: 'training_programs' })
@@ -35,6 +41,13 @@ export class TrainingProgram {
   @Column({ name: 'created_at', type: 'date', nullable: true })
   createdAt: boolean;
 
-  // @ManyToOne(() => User, (user) => user.photos)
-  // user: User;
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'id_user',
+    referencedColumnName: 'id',
+  })
+  user: User;
+
+  @ManyToMany(() => User, (user) => user.followedPrograms)
+  followers: User[];
 }
