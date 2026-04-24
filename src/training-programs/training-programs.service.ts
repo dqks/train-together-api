@@ -16,6 +16,7 @@ import jwt from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import { JwtPayload } from '../auth/jwt.strategy';
+import { TrainingProgramDay } from '../training-program-days/training-program-day.entity';
 
 @Injectable()
 export class TrainingProgramsService {
@@ -53,7 +54,13 @@ export class TrainingProgramsService {
     }
     const p = await this.programRepository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: [
+        'user',
+        'days',
+        'days.day',
+        'days.exercises',
+        'days.exercises.exercise',
+      ],
     });
 
     if (!p) {
@@ -91,6 +98,23 @@ export class TrainingProgramsService {
         id: p.user.id,
         nickname: p.user.nickname,
       },
+      days: p.days.map((day: TrainingProgramDay) => ({
+        id: day.id,
+        name: day.name,
+        description: day.description,
+        day: day.day,
+        exercises: day.exercises.map((exercise) => ({
+          id: exercise.id,
+          sets: exercise.sets,
+          reps: exercise.reps,
+          exerciseOrder: exercise.exerciseOrder,
+          exercise: {
+            id: exercise.exercise.id,
+            name: exercise.exercise.name,
+            image: exercise.exercise.image,
+          },
+        })),
+      })),
     };
   }
 

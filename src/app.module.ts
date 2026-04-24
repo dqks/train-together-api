@@ -12,6 +12,9 @@ import { RolesModule } from './roles/roles.module';
 import { EquipmentModule } from './equipment/equipment.module';
 import { ExerciseTypesModule } from './exercise-types/exercise-types.module';
 import { ExerciseProgressionTypesModule } from './exercise-progression-types/exercise-progression-types.module';
+import { TrainingProgramDaysModule } from './training-program-days/training-program-days.module';
+import { DaysModule } from './days/days.module';
+import { TrainingProgramExercisesModule } from './training-program-exercises/training-program-exercises.module';
 
 @Module({
   imports: [
@@ -42,6 +45,9 @@ import { ExerciseProgressionTypesModule } from './exercise-progression-types/exe
     RolesModule,
     ExerciseTypesModule,
     ExerciseProgressionTypesModule,
+    DaysModule,
+    TrainingProgramExercisesModule,
+    TrainingProgramDaysModule,
   ],
   controllers: [AppController],
   providers: [AppService],

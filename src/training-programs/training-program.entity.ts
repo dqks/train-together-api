@@ -4,9 +4,11 @@ import {
   JoinColumn,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../users/user.entity';
+import { TrainingProgramDay } from '../training-program-days/training-program-day.entity';
 
 @Entity({ name: 'training_programs' })
 export class TrainingProgram {
@@ -50,4 +52,7 @@ export class TrainingProgram {
 
   @ManyToMany(() => User, (user) => user.followedPrograms)
   followers: User[];
+
+  @OneToMany(() => TrainingProgramDay, (program) => program.trainingProgram)
+  days: TrainingProgramDay[];
 }
