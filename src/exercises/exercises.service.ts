@@ -1,7 +1,13 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Exercise } from './exercise.entity';
-import { IsNull, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { CustomRequest } from '../common/types/custom-request';
 import { ExerciseTypesService } from '../exercise-types/exercise-types.service';
@@ -16,15 +22,14 @@ export class ExercisesService {
     private exerciseRepository: Repository<Exercise>,
     private exerciseTypeService: ExerciseTypesService,
     private muscleService: MusclesService,
-    @InjectRepository(ExerciseMuscle)
-    private exerciseMuscleRepository: Repository<ExerciseMuscle>,
+    // @InjectRepository(ExerciseMuscle)
+    // private exerciseMuscleRepository: Repository<ExerciseMuscle>,
   ) {}
 
   async findAllDefault(filter: FilterExerciseDto) {
     const hasMuscleFilter = filter.primaryMuscles?.length;
     const hasEquipmentFilter = filter.equipmentId;
 
-    // Строим базовый запрос
     const query = this.exerciseRepository
       .createQueryBuilder('exercise')
       .select(['exercise.id', 'exercise.name', 'exercise.image'])
@@ -34,14 +39,12 @@ export class ExercisesService {
       .orderBy('exercise.name', 'ASC')
       .where('exercise.userId IS NULL');
 
-    // Фильтр по оборудованию (ID)
     if (hasEquipmentFilter) {
       query.andWhere('equipment.id = :equipmentId', {
         equipmentId: filter.equipmentId,
       });
     }
 
-    // Фильтр по основным мышцам
     if (hasMuscleFilter) {
       query
         .andWhere('em.muscleId IN (:...muscleIds)', {
@@ -52,7 +55,6 @@ export class ExercisesService {
 
     const exercises = await query.getMany();
 
-    // Форматируем ответ
     return exercises.map((e) => ({
       id: e.id,
       name: e.name,
@@ -87,8 +89,24 @@ export class ExercisesService {
     });
   }
 
-  async findOne(id: number) {
-    return await this.exerciseRepository.findOne({ where: { id } });
+  async findOne(id: number, req: CustomRequest) {
+    const exercise = await this.exerciseRepository.findOne({ where: { id } });
+
+    if (!exercise) {
+      throw new HttpException(
+        { status: ['Упражнение не найдено'] },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (exercise.userId && exercise.userId !== req.user.userId) {
+      throw new HttpException(
+        { status: ['Нельзя просматривать упражнения другого пользователя'] },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    return exercise;
   }
 
   async getUserExercises(userId: number) {

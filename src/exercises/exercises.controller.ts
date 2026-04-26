@@ -32,8 +32,9 @@ export class ExercisesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.exerciseService.findOne(+id);
+  @UseGuards(JwtAuthGuard)
+  findOne(@Param('id') id: string, @Req() req: CustomRequest) {
+    return this.exerciseService.findOne(+id, req);
   }
 
   @Post()

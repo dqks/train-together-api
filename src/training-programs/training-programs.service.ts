@@ -64,8 +64,11 @@ export class TrainingProgramsService {
       ],
     });
 
-    if (!p) {
-      return null;
+    if (!p || !p.isPublic) {
+      throw new HttpException(
+        { status: ['Программа не найдена'] },
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     let isFollowed = false;

@@ -37,8 +37,9 @@ export class ResponseFilter implements ExceptionFilter {
     // Остальные HTTP исключения
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
-      const message = exception.message;
-      return response.status(status).json(ApiResponse.error([message], status));
+      const message = exception.getResponse();
+      // @ts-ignore
+      return response.status(status).json(ApiResponse.error(message, status));
     }
 
     // Неизвестные ошибки
