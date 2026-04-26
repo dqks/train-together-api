@@ -1,18 +1,18 @@
-import { IsOptional } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsNumber, IsOptional } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 
 export class FilterExerciseDto {
   @IsOptional()
   @Transform(({ value }) => {
     if (!value) return [];
-    return Array.isArray(value) ? value.map(Number) : [Number(value)];
+    if (typeof value === 'string') return [Number(value)];
+    if (Array.isArray(value)) return value.map(Number);
+    return [];
   })
   primaryMuscles?: number[];
 
   @IsOptional()
-  @Transform(({ value }) => {
-    if (!value) return [];
-    return Array.isArray(value) ? value.map(Number) : [Number(value)];
-  })
-  equipment?: number[];
+  @Type(() => Number)
+  @IsNumber()
+  equipmentId?: number;
 }

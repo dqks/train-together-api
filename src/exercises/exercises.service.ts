@@ -6,6 +6,8 @@ import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { CustomRequest } from '../common/types/custom-request';
 import { ExerciseTypesService } from '../exercise-types/exercise-types.service';
 import { MusclesService } from '../muscles/muscles.service';
+import { FilterExerciseDto } from './dto/filter-exercise.dto';
+import { ExerciseMuscle } from '../exercises-muscles/exercise-muscle.entity';
 
 @Injectable()
 export class ExercisesService {
@@ -14,51 +16,60 @@ export class ExercisesService {
     private exerciseRepository: Repository<Exercise>,
     private exerciseTypeService: ExerciseTypesService,
     private muscleService: MusclesService,
+    @InjectRepository(ExerciseMuscle)
+    private exerciseMuscleRepository: Repository<ExerciseMuscle>,
   ) {}
 
-  async findAllDefault() {
-    // const exercises = await this.exerciseRepository.find({
-    //   order: { name: 'ASC' },
-    //   where: { userId: IsNull() },
-    //   relations: ['exerciseMuscles', 'exerciseMuscles.muscle'],
-    // });
-    //
-    // console.log(exercises);
+  async findAllDefault(filter: FilterExerciseDto) {
+    const hasMuscleFilter = filter.primaryMuscles?.length;
+    const hasEquipmentFilter = filter.equipmentId;
 
-    // return await this.exerciseRepository.find({
-    //   select: {
-    //     id: true,
-    //     name: true,
-    //     image: true,
-    //     muscles: true,
-    //   },
-    //   order: { name: 'ASC' },
-    //   where: { userId: IsNull() },
-    //   relations: ['muscles'],
-    // });
+    // Строим базовый запрос
+    const query = this.exerciseRepository
+      .createQueryBuilder('exercise')
+      .select(['exercise.id', 'exercise.name', 'exercise.image'])
+      .leftJoinAndSelect('exercise.exerciseMuscles', 'em')
+      .leftJoinAndSelect('em.muscle', 'muscle')
+      .leftJoinAndSelect('exercise.equipment', 'equipment')
+      .orderBy('exercise.name', 'ASC')
+      .where('exercise.userId IS NULL');
 
-    const exercises = await this.exerciseRepository.find({
-      select: {
-        id: true,
-        name: true,
-        image: true,
-        muscles: true,
-      },
-      order: { name: 'ASC' },
-      where: { userId: IsNull() },
-      relations: ['exerciseMuscles', 'exerciseMuscles.muscle'],
-    });
+    // Фильтр по оборудованию (ID)
+    if (hasEquipmentFilter) {
+      query.andWhere('equipment.id = :equipmentId', {
+        equipmentId: filter.equipmentId,
+      });
+    }
 
+    // Фильтр по основным мышцам
+    if (hasMuscleFilter) {
+      query
+        .andWhere('em.muscleId IN (:...muscleIds)', {
+          muscleIds: filter.primaryMuscles,
+        })
+        .andWhere('em.isPrimary = true');
+    }
+
+    const exercises = await query.getMany();
+
+    // Форматируем ответ
     return exercises.map((e) => ({
       id: e.id,
       name: e.name,
       image: e.image,
-      muscles: e.exerciseMuscles.map((m) => ({
-        id: m.muscle.id,
-        name: m.muscle.name,
-        nameEng: m.muscle.nameEng,
-        isPrimary: m.isPrimary,
-      })),
+      // equipment:
+      //   e.equipment?.map((eq) => ({
+      //     id: eq.id,
+      //     name: eq.name,
+      //     nameEng: eq.nameEng,
+      //   })) || [],
+      muscles:
+        e.exerciseMuscles?.map((m) => ({
+          id: m.muscle.id,
+          name: m.muscle.name,
+          nameEng: m.muscle.nameEng,
+          isPrimary: m.isPrimary,
+        })) || [],
     }));
   }
 

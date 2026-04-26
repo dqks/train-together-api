@@ -6,6 +6,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -13,14 +14,15 @@ import { ExercisesService } from './exercises.service';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import type { CustomRequest } from '../common/types/custom-request';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { FilterExerciseDto } from './dto/filter-exercise.dto';
 
 @Controller('exercises')
 export class ExercisesController {
   constructor(private exerciseService: ExercisesService) {}
 
   @Get()
-  findAll() {
-    return this.exerciseService.findAllDefault();
+  findAll(@Query() filter: FilterExerciseDto) {
+    return this.exerciseService.findAllDefault(filter);
   }
 
   @Get('/my')
