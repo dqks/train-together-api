@@ -84,7 +84,7 @@ export class AuthService {
       nickname: user.nickname,
     };
     const token = this.jwtService.sign(payload, {
-      expiresIn: '15m',
+      expiresIn: '7d',
       secret: this.configService.get('JWT_SECRET'),
     });
 
@@ -92,7 +92,6 @@ export class AuthService {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
-      maxAge: 15 * 1000 * 60,
     });
 
     return {

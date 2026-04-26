@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { TrainingProgramDay } from '../training-program-days/training-program-day.entity';
+import { FollowedTrainingProgram } from '../followed-training-programs/followed-training-programs.entity';
 
 @Entity({ name: 'training_programs' })
 export class TrainingProgram {
@@ -40,8 +41,12 @@ export class TrainingProgram {
   @Column({ name: 'public', type: 'boolean', nullable: false })
   isPublic: boolean;
 
-  @Column({ name: 'created_at', type: 'date', nullable: true })
-  createdAt: boolean;
+  @Column({
+    name: 'created_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  createdAt: Date;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({
@@ -55,4 +60,7 @@ export class TrainingProgram {
 
   @OneToMany(() => TrainingProgramDay, (program) => program.trainingProgram)
   days: TrainingProgramDay[];
+
+  @OneToMany(() => FollowedTrainingProgram, (ftp) => ftp.trainingProgram)
+  followersRelations: FollowedTrainingProgram[];
 }

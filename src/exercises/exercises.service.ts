@@ -17,7 +17,27 @@ export class ExercisesService {
   ) {}
 
   async findAllDefault() {
-    return await this.exerciseRepository.find({
+    // const exercises = await this.exerciseRepository.find({
+    //   order: { name: 'ASC' },
+    //   where: { userId: IsNull() },
+    //   relations: ['exerciseMuscles', 'exerciseMuscles.muscle'],
+    // });
+    //
+    // console.log(exercises);
+
+    // return await this.exerciseRepository.find({
+    //   select: {
+    //     id: true,
+    //     name: true,
+    //     image: true,
+    //     muscles: true,
+    //   },
+    //   order: { name: 'ASC' },
+    //   where: { userId: IsNull() },
+    //   relations: ['muscles'],
+    // });
+
+    const exercises = await this.exerciseRepository.find({
       select: {
         id: true,
         name: true,
@@ -26,6 +46,32 @@ export class ExercisesService {
       },
       order: { name: 'ASC' },
       where: { userId: IsNull() },
+      relations: ['exerciseMuscles', 'exerciseMuscles.muscle'],
+    });
+
+    return exercises.map((e) => ({
+      id: e.id,
+      name: e.name,
+      image: e.image,
+      muscles: e.exerciseMuscles.map((m) => ({
+        id: m.muscle.id,
+        name: m.muscle.name,
+        nameEng: m.muscle.nameEng,
+        isPrimary: m.isPrimary,
+      })),
+    }));
+  }
+
+  async getMy(req: CustomRequest) {
+    return await this.exerciseRepository.find({
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        muscles: true,
+      },
+      order: { name: 'ASC' },
+      where: { userId: req.user.userId },
       relations: ['muscles'],
     });
   }

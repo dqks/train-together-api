@@ -23,6 +23,12 @@ export class ExercisesController {
     return this.exerciseService.findAllDefault();
   }
 
+  @Get('/my')
+  @UseGuards(JwtAuthGuard)
+  getMy(@Req() req: CustomRequest) {
+    return this.exerciseService.getMy(req);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.exerciseService.findOne(+id);

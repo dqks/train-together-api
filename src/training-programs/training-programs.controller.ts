@@ -29,6 +29,12 @@ export class TrainingProgramsController {
     return this.trainingProgramService.getMyTrainingPrograms(req);
   }
 
+  @Get('/favourite')
+  @UseGuards(JwtAuthGuard)
+  getFavouriteTrainingPrograms(@Req() req: CustomRequest) {
+    return this.trainingProgramService.getFavouriteTrainingPrograms(req);
+  }
+
   @Post('/subscribe/:id')
   @UseGuards(JwtAuthGuard)
   subscribeTrainingPrograms(

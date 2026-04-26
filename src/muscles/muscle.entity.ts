@@ -1,5 +1,12 @@
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToMany,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Exercise } from '../exercises/exercise.entity';
+import { ExerciseMuscle } from '../exercises-muscles/exercise-muscle.entity';
 
 @Entity({ name: 'muscles' })
 export class Muscle {
@@ -24,4 +31,7 @@ export class Muscle {
 
   @ManyToMany(() => Exercise, (exercise) => exercise.muscles)
   exercises: Exercise[];
+
+  @OneToMany(() => ExerciseMuscle, (em) => em.muscle)
+  exerciseMuscles: ExerciseMuscle[];
 }

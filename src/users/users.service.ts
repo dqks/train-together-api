@@ -37,7 +37,11 @@ export class UsersService {
     return await this.usersRepository.findOne({
       where: { email },
       select: ['id', 'email', 'nickname', 'password', 'roleId'],
-      relations: ['followedPrograms'],
+      relations: [
+        'followedProgramsRelations',
+        'followedProgramsRelations.user',
+        'followedProgramsRelations.trainingProgram',
+      ],
     });
   }
 

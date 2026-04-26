@@ -23,7 +23,7 @@ export class TrainingProgramsService {
   constructor(
     @InjectRepository(TrainingProgram)
     private programRepository: Repository<TrainingProgram>,
-    @InjectRepository(TrainingProgram)
+    @InjectRepository(User)
     private userRepository: Repository<User>,
     private userService: UsersService,
     private configService: ConfigService,
@@ -33,6 +33,7 @@ export class TrainingProgramsService {
     const trainingPrograms = await this.programRepository.find({
       where: { isPublic: true },
       relations: ['user'],
+      order: { createdAt: 'desc' },
     });
 
     return trainingPrograms.map((p) => ({
@@ -118,6 +119,34 @@ export class TrainingProgramsService {
     };
   }
 
+  async getFavouriteTrainingPrograms(req: CustomRequest) {
+    const user = await this.userRepository.findOne({
+      where: { id: req.user.userId },
+      relations: [
+        'followedProgramsRelations',
+        'followedProgramsRelations.user',
+        'followedProgramsRelations.trainingProgram',
+        'followedProgramsRelations.trainingProgram.user',
+      ],
+    });
+
+    console.log(user?.followedProgramsRelations);
+
+    return user?.followedProgramsRelations
+      .map((ftp) => ({
+        id: ftp.trainingProgram.id,
+        name: ftp.trainingProgram.name,
+        description: ftp.trainingProgram.description,
+        createdAt: ftp.createdAt,
+        imageUrl: ftp.trainingProgram.image,
+        user: {
+          id: ftp.trainingProgram.user.id,
+          nickname: ftp.trainingProgram.user.nickname,
+        },
+      }))
+      .sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+  }
+
   async subscribeTrainingPrograms(id: number, req: CustomRequest) {
     const email = req.user.email;
 
@@ -189,6 +218,7 @@ export class TrainingProgramsService {
     const userId: number = req.user.userId;
     return this.programRepository.find({
       where: { userId },
+      order: { createdAt: 'desc' },
     });
   }
 
@@ -212,6 +242,7 @@ export class TrainingProgramsService {
       success: true,
     };
   }
+
   async deleteTrainingProgram(id: number, req: CustomRequest) {
     try {
       const program = await this.programRepository.findOne({ where: { id } });

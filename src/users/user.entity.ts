@@ -1,4 +1,5 @@
 import {
+  AfterLoad,
   BeforeInsert,
   Check,
   Column,
@@ -7,12 +8,14 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
 import { hash } from 'bcrypt';
 import { Role } from '../roles/role.entity';
 import { TrainingProgram } from '../training-programs/training-program.entity';
+import { FollowedTrainingProgram } from '../followed-training-programs/followed-training-programs.entity';
 
 @Entity({ name: 'users' })
 @Unique('uq_users_email', ['email'])
@@ -105,14 +108,11 @@ export class User {
   // @JoinColumn({ name: 'id_gender', referencedColumnName: 'id' })
   // gender: Gender;
 
-  // Связь с таблицей roles
   @ManyToOne(() => Role, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_role', referencedColumnName: 'id' })
   role: Role;
 
-  // @OneToMany(() => TrainingProgram)
-  // trainingPrograms: TrainingProgram[];
-
+  //TODO заменить
   @ManyToMany(() => TrainingProgram, (program) => program.followers)
   @JoinTable({
     name: 'followed_training_programs', // имя связующей таблицы
@@ -126,4 +126,14 @@ export class User {
     },
   })
   followedPrograms: TrainingProgram[];
+
+  @OneToMany(() => FollowedTrainingProgram, (ftp) => ftp.user)
+  followedProgramsRelations: FollowedTrainingProgram[];
+
+  // Вспомогательное поле для простого доступа к программам
+  @AfterLoad()
+  setFollowedPrograms() {
+    this.followedPrograms =
+      this.followedProgramsRelations?.map((rel) => rel.trainingProgram) || [];
+  }
 }

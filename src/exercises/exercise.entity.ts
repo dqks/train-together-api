@@ -5,12 +5,14 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ExerciseProgressionType } from '../exercise-progression-types/exercise-progression-type.entity';
 import { ExerciseType } from '../exercise-types/exercise-type.entity';
 import { Muscle } from '../muscles/muscle.entity';
 import { Equipment } from '../equipment/equipment.entity';
+import { ExerciseMuscle } from '../exercises-muscles/exercise-muscle.entity';
 
 @Entity({ name: 'exercises' })
 export class Exercise {
@@ -117,4 +119,7 @@ export class Exercise {
     referencedColumnName: 'id',
   })
   exerciseProgressionType: ExerciseProgressionType;
+
+  @OneToMany(() => ExerciseMuscle, (em) => em.exercise)
+  exerciseMuscles: ExerciseMuscle[];
 }
