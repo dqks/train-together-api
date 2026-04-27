@@ -20,7 +20,7 @@ export class CreateProgramDto {
   @MaxLength(2500, { message: 'Максимум 2500 символов' })
   readonly description: string;
 
-  @IsBoolean()
+  @IsString()
   @IsNotEmpty({ message: 'Обязательное поле' })
   readonly isPublic: string;
 }

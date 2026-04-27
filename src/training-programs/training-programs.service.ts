@@ -17,6 +17,8 @@ import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import { JwtPayload } from '../auth/jwt.strategy';
 import { TrainingProgramDay } from '../training-program-days/training-program-day.entity';
+import { join } from 'path';
+import { unlink } from 'fs/promises';
 
 @Injectable()
 export class TrainingProgramsService {
@@ -49,7 +51,7 @@ export class TrainingProgramsService {
     }));
   }
 
-  async getTrainingProgram(id: number, req: Request) {
+  async getTrainingProgram(id: number, req: CustomRequest) {
     if (!id || isNaN(id)) {
       throw new BadRequestException('Invalid ID');
     }
@@ -64,7 +66,7 @@ export class TrainingProgramsService {
       ],
     });
 
-    if (!p || !p.isPublic) {
+    if (!p || (!p.isPublic && p.userId !== req.user.userId)) {
       throw new HttpException(
         { status: ['Программа не найдена'] },
         HttpStatus.NOT_FOUND,
@@ -73,22 +75,12 @@ export class TrainingProgramsService {
 
     let isFollowed = false;
 
-    if (req.cookies.access_token) {
-      // @ts-ignore
-      const decoded: JwtPayload | undefined = jwt.verify(
-        req.cookies.access_token,
-        this.configService.get('JWT_SECRET') as string,
-      );
+    const user = await this.userService.getUserByEmailWithFollowed(
+      req.user.email,
+    );
 
-      if (decoded) {
-        const user = await this.userService.getUserByEmailWithFollowed(
-          decoded?.email,
-        );
-
-        if (user?.followedPrograms.find((program) => program.id === p.id)) {
-          isFollowed = true;
-        }
-      }
+    if (user?.followedPrograms.find((program) => program.id === p.id)) {
+      isFollowed = true;
     }
 
     return {
@@ -228,15 +220,17 @@ export class TrainingProgramsService {
   async createTrainingProgram(
     createProgramDto: CreateProgramDto,
     req: CustomRequest,
+    image: string | null,
   ) {
-    const userId = req.user.userId;
+    // const userId = req.user.userId;
+    const userId = 85;
 
     const newProgram = this.programRepository.create({
       userId: userId,
       name: createProgramDto.name,
       description: createProgramDto.description,
-      isPublic: !!createProgramDto.isPublic,
-      // image: createProgramDto.image,
+      isPublic: createProgramDto.isPublic === 'true',
+      image: image ? image : undefined,
     });
 
     await this.programRepository.save(newProgram);
@@ -256,6 +250,12 @@ export class TrainingProgramsService {
           HttpStatus.BAD_REQUEST,
         );
       }
+
+      if (program.image) {
+        const oldPath = join(process.cwd(), program.image);
+        await unlink(oldPath).catch(console.error);
+      }
+
       await this.programRepository.delete(id);
       return { success: true };
     } catch (e) {

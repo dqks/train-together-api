@@ -101,7 +101,7 @@ export class ExercisesService {
 
     if (exercise.userId && exercise.userId !== req.user.userId) {
       throw new HttpException(
-        { status: ['Нельзя просматривать упражнения другого пользователя'] },
+        { status: ['Нельзя просматривать упражнение другого пользователя'] },
         HttpStatus.FORBIDDEN,
       );
     }
