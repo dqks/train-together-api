@@ -16,11 +16,13 @@ export class CreateExerciseDto {
   @MinLength(5)
   readonly name: string;
 
+  @Transform(({ value }) => parseInt(value, 10))
   @IsInt()
   @IsPositive()
   @IsNotEmpty()
   exerciseProgressionTypeId: number;
 
+  @Transform(({ value }) => parseInt(value, 10))
   @IsInt()
   @IsNotEmpty()
   @IsPositive()
@@ -29,8 +31,18 @@ export class CreateExerciseDto {
   @IsOptional()
   @Transform(({ value }) => {
     if (!value) return [];
-    if (typeof value === 'string') return [Number(value)];
-    if (Array.isArray(value)) return value.map(Number);
+    if (typeof value === 'string' && value.includes(',')) {
+      return value
+        .split(',')
+        .map((v) => parseInt(v, 10))
+        .filter((v) => !isNaN(v));
+    }
+    if (typeof value === 'string') {
+      return [parseInt(value, 10)].filter((v) => !isNaN(v));
+    }
+    if (Array.isArray(value)) {
+      return value.map((v) => parseInt(v, 10));
+    }
     return [];
   })
   @ArrayMaxSize(5)
@@ -39,6 +51,7 @@ export class CreateExerciseDto {
   @IsPositive({ each: true })
   secondaryMuscleIds: number[] = [];
 
+  @Transform(({ value }) => parseInt(value, 10))
   @IsInt()
   @IsNotEmpty()
   equipmentId: number;

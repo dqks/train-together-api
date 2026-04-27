@@ -7,13 +7,16 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ExercisesService } from './exercises.service';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import type { CustomRequest } from '../common/types/custom-request';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FilterExerciseDto } from './dto/filter-exercise.dto';
+import { createImageInterceptor } from '../common/interceptors/image.interceptor';
 
 @Controller('exercises')
 export class ExercisesController {
@@ -37,12 +40,20 @@ export class ExercisesController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(createImageInterceptor('exercises'))
+  // @UseGuards(JwtAuthGuard)
   createExercise(
     @Body() createExerciseDto: CreateExerciseDto,
     @Req() req: CustomRequest,
+    @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.exerciseService.createExercise(createExerciseDto, req);
+    const imagePath = file ? `/uploads/exercises/${file.filename}` : null;
+
+    return this.exerciseService.createExercise(
+      createExerciseDto,
+      req,
+      imagePath,
+    );
   }
 
   @Delete(':id')

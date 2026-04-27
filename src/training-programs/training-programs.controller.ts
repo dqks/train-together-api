@@ -14,9 +14,7 @@ import { TrainingProgramsService } from './training-programs.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateProgramDto } from './dto/create-program.dto';
 import type { CustomRequest } from '../common/types/custom-request';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { createImageInterceptor } from '../common/interceptors/image.interceptor';
 
 @Controller('training-programs')
 export class TrainingProgramsController {
@@ -64,26 +62,7 @@ export class TrainingProgramsController {
   }
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/programs',
-        filename: (req, file, callback) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          callback(null, `${uniqueSuffix}${ext}`);
-        },
-      }),
-      fileFilter: (req, file, callback) => {
-        if (!file.originalname.match(/\.(jpg|jpeg|png|webp)$/)) {
-          return callback(new Error('Only image files are allowed!'), false);
-        }
-        callback(null, true);
-      },
-      limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
-    }),
-  )
+  @UseInterceptors(createImageInterceptor('programs'))
   @UseGuards(JwtAuthGuard)
   createTrainingProgram(
     @Body() createProgramDto: CreateProgramDto,

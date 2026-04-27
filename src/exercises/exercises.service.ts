@@ -17,6 +17,8 @@ import { Muscle } from '../muscles/muscle.entity';
 import { Equipment } from '../equipment/equipment.entity';
 import { ExerciseProgressionType } from '../exercise-progression-types/exercise-progression-type.entity';
 import { ExercisesMusclesService } from '../exercises-muscles/exercises-muscles.service';
+import { join } from 'path';
+import { unlink } from 'fs/promises';
 
 @Injectable()
 export class ExercisesService {
@@ -121,9 +123,13 @@ export class ExercisesService {
     return this.exerciseRepository.find({ where: { userId } });
   }
 
-  async createExercise(dto: CreateExerciseDto, req: CustomRequest) {
-    // const userId = 85;
-    const userId = req.user.userId;
+  async createExercise(
+    dto: CreateExerciseDto,
+    req: CustomRequest,
+    image: string | null,
+  ) {
+    const userId = 85;
+    // const userId = req.user.userId;
 
     const userExercises = await this.getUserExercises(userId);
 
@@ -171,6 +177,7 @@ export class ExercisesService {
       exerciseTypeId: userExerciseType?.id,
       exerciseProgressionTypeId: dto.exerciseProgressionTypeId,
       equipment: [equipment],
+      image: image ? image : undefined,
     });
 
     const insertedExercise = await this.exerciseRepository.save(newExercise);
@@ -192,13 +199,16 @@ export class ExercisesService {
         where: { id: exerciseId },
       });
 
-      console.log(exercise);
-
       if (exercise?.userId === null) {
         throw new HttpException(
           'Упражнение не пользователя',
           HttpStatus.BAD_REQUEST,
         );
+      }
+
+      if (exercise?.image) {
+        const oldPath = join(process.cwd(), exercise.image);
+        await unlink(oldPath).catch(console.error);
       }
 
       await this.exerciseRepository.delete(exerciseId);
