@@ -1,5 +1,5 @@
 import {
-  ForbiddenException,
+  BadRequestException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -7,13 +7,16 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Exercise } from './exercise.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { CustomRequest } from '../common/types/custom-request';
 import { ExerciseTypesService } from '../exercise-types/exercise-types.service';
 import { MusclesService } from '../muscles/muscles.service';
 import { FilterExerciseDto } from './dto/filter-exercise.dto';
-import { ExerciseMuscle } from '../exercises-muscles/exercise-muscle.entity';
+import { Muscle } from '../muscles/muscle.entity';
+import { Equipment } from '../equipment/equipment.entity';
+import { ExerciseProgressionType } from '../exercise-progression-types/exercise-progression-type.entity';
+import { ExercisesMusclesService } from '../exercises-muscles/exercises-muscles.service';
 
 @Injectable()
 export class ExercisesService {
@@ -22,8 +25,13 @@ export class ExercisesService {
     private exerciseRepository: Repository<Exercise>,
     private exerciseTypeService: ExerciseTypesService,
     private muscleService: MusclesService,
-    // @InjectRepository(ExerciseMuscle)
-    // private exerciseMuscleRepository: Repository<ExerciseMuscle>,
+    private exerciseMusclesService: ExercisesMusclesService,
+    @InjectRepository(Muscle)
+    private muscleRepository: Repository<Muscle>,
+    @InjectRepository(Equipment)
+    private equipmentRepository: Repository<Equipment>,
+    @InjectRepository(ExerciseProgressionType)
+    private exerciseProgressionTypeRepository: Repository<ExerciseProgressionType>,
   ) {}
 
   async findAllDefault(filter: FilterExerciseDto) {
@@ -113,10 +121,8 @@ export class ExercisesService {
     return this.exerciseRepository.find({ where: { userId } });
   }
 
-  async createExercise(
-    createExerciseDto: CreateExerciseDto,
-    req: CustomRequest,
-  ) {
+  async createExercise(dto: CreateExerciseDto, req: CustomRequest) {
+    // const userId = 85;
     const userId = req.user.userId;
 
     const userExercises = await this.getUserExercises(userId);
@@ -128,30 +134,52 @@ export class ExercisesService {
       );
     }
 
-    const userExerciseType =
-      await this.exerciseTypeService.getUserProgressionType();
-
-    if (!userExerciseType) {
-      throw new HttpException(
-        'Тип упражнения не найден',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+    if (dto.secondaryMuscleIds.includes(dto.primaryMuscleId)) {
+      throw new BadRequestException(
+        'Основная мышечная группа не может быть во второстепенных',
       );
     }
 
-    const muscles = await this.muscleService.getAll();
+    const [primaryMuscle, secondaryMuscles, equipment, progressionType] =
+      await Promise.all([
+        this.muscleRepository.findOneBy({ id: dto.primaryMuscleId }),
+        this.muscleRepository.findBy({ id: In(dto.secondaryMuscleIds) }),
+        this.equipmentRepository.findOneBy({ id: dto.equipmentId }),
+        this.exerciseProgressionTypeRepository.findOneBy({
+          id: dto.exerciseProgressionTypeId,
+        }),
+      ]);
+
+    if (!primaryMuscle)
+      throw new NotFoundException('Основная мышечная группа не найдена');
+    if (secondaryMuscles.length !== dto.secondaryMuscleIds.length) {
+      throw new NotFoundException('Второстепенные мышцы не найдены');
+    }
+    if (!equipment) throw new NotFoundException('Оборудование не найдено');
+    if (!progressionType)
+      throw new NotFoundException('Тип прогрессии не найден');
+
+    const userExerciseType =
+      await this.exerciseTypeService.getUserExerciseType();
 
     const newExercise = this.exerciseRepository.create({
       userId,
-      name: createExerciseDto.name,
+      name: dto.name,
       advice: '',
       description: '',
       technique: '',
-      exerciseTypeId: userExerciseType.id,
-      exerciseProgressionTypeId: createExerciseDto.exerciseProgressionTypeId,
-      muscles: [muscles[0]],
+      exerciseTypeId: userExerciseType?.id,
+      exerciseProgressionTypeId: dto.exerciseProgressionTypeId,
+      equipment: [equipment],
     });
 
-    await this.exerciseRepository.save(newExercise);
+    const insertedExercise = await this.exerciseRepository.save(newExercise);
+
+    await this.exerciseMusclesService.createExerciseMuscles(
+      insertedExercise.id,
+      primaryMuscle.id,
+      secondaryMuscles.map((m) => m.id),
+    );
 
     return {
       success: true,

@@ -12,10 +12,7 @@ import { CreateProgramDto } from './dto/create-program.dto';
 import { CustomRequest } from '../common/types/custom-request';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/user.entity';
-import jwt from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
-import type { Request } from 'express';
-import { JwtPayload } from '../auth/jwt.strategy';
 import { TrainingProgramDay } from '../training-program-days/training-program-day.entity';
 import { join } from 'path';
 import { unlink } from 'fs/promises';
@@ -211,10 +208,21 @@ export class TrainingProgramsService {
 
   async getMyTrainingPrograms(req: CustomRequest) {
     const userId: number = req.user.userId;
-    return this.programRepository.find({
+
+    const program = await this.programRepository.find({
+      select: ['id', 'name', 'description', 'userId', 'createdAt', 'image'],
       where: { userId },
       order: { createdAt: 'desc' },
     });
+
+    return program.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      userId: p.userId,
+      createdAt: p.createdAt,
+      imageUrl: p.image,
+    }));
   }
 
   async createTrainingProgram(
@@ -222,8 +230,8 @@ export class TrainingProgramsService {
     req: CustomRequest,
     image: string | null,
   ) {
-    // const userId = req.user.userId;
-    const userId = 85;
+    const userId = req.user.userId;
+    // const userId = 85;
 
     const newProgram = this.programRepository.create({
       userId: userId,

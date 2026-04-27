@@ -14,7 +14,6 @@ import { TrainingProgramsService } from './training-programs.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateProgramDto } from './dto/create-program.dto';
 import type { CustomRequest } from '../common/types/custom-request';
-import type { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -68,7 +67,7 @@ export class TrainingProgramsController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: './uploads/exercises',
+        destination: './uploads/programs',
         filename: (req, file, callback) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -85,13 +84,13 @@ export class TrainingProgramsController {
       limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
     }),
   )
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   createTrainingProgram(
     @Body() createProgramDto: CreateProgramDto,
     @Req() req: CustomRequest,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const imagePath = file ? `/uploads/exercises/${file.filename}` : null;
+    const imagePath = file ? `/uploads/programs/${file.filename}` : null;
     return this.trainingProgramService.createTrainingProgram(
       createProgramDto,
       req,
