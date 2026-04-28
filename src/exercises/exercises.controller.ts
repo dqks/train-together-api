@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -17,6 +18,7 @@ import type { CustomRequest } from '../common/types/custom-request';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FilterExerciseDto } from './dto/filter-exercise.dto';
 import { createImageInterceptor } from '../common/interceptors/image.interceptor';
+import { UpdateExerciseDto } from './dto/update-exercise.dto';
 
 @Controller('exercises')
 export class ExercisesController {
@@ -37,6 +39,25 @@ export class ExercisesController {
   @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string, @Req() req: CustomRequest) {
     return this.exerciseService.findOne(+id, req);
+  }
+
+  @Patch(':id')
+  // @UseGuards(JwtAuthGuard)
+  @UseInterceptors(createImageInterceptor('exercises'))
+  updateExercise(
+    @Param('id') id: string,
+    @Req() req: CustomRequest,
+    @Body() updateExerciseDto: UpdateExerciseDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const imagePath = file ? `/uploads/exercises/${file.filename}` : null;
+
+    return this.exerciseService.updateExercise(
+      +id,
+      req,
+      updateExerciseDto,
+      imagePath,
+    );
   }
 
   @Post()

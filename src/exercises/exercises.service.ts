@@ -19,6 +19,8 @@ import { ExerciseProgressionType } from '../exercise-progression-types/exercise-
 import { ExercisesMusclesService } from '../exercises-muscles/exercises-muscles.service';
 import { join } from 'path';
 import { unlink } from 'fs/promises';
+import { UpdateExerciseDto } from './dto/update-exercise.dto';
+import { ExerciseMuscle } from '../exercises-muscles/exercise-muscle.entity';
 
 @Injectable()
 export class ExercisesService {
@@ -34,6 +36,8 @@ export class ExercisesService {
     private equipmentRepository: Repository<Equipment>,
     @InjectRepository(ExerciseProgressionType)
     private exerciseProgressionTypeRepository: Repository<ExerciseProgressionType>,
+    @InjectRepository(ExerciseMuscle)
+    private exerciseMuscleRepository: Repository<ExerciseMuscle>,
   ) {}
 
   async findAllDefault(filter: FilterExerciseDto) {
@@ -191,6 +195,121 @@ export class ExercisesService {
     return {
       success: true,
     };
+  }
+
+  async updateExercise(
+    id: number,
+    req: CustomRequest,
+    dto: UpdateExerciseDto,
+    image: string | null,
+  ) {
+    const userId = 85;
+    // const userId = req.user.userId
+
+    const data = {
+      name: dto.name || undefined,
+      exerciseProgressionTypeId: dto.exerciseProgressionTypeId || undefined,
+      equipment: undefined as Equipment[] | undefined,
+    };
+
+    if (dto.equipmentId) {
+      const equipment = await this.equipmentRepository.findOneBy({
+        id: dto.equipmentId,
+      });
+      if (!equipment) {
+        throw new NotFoundException('Оборудование не найдено');
+      }
+      data.equipment = [equipment];
+    }
+
+    const exercise = await this.exerciseRepository.preload({ id, ...data });
+
+    if (!exercise) {
+      throw new NotFoundException('Упражнение не найдено');
+    }
+
+    if (exercise.userId !== userId) {
+      throw new BadRequestException('Упражнение не ваше');
+    }
+
+    if (dto.primaryMuscleId) {
+      const primaryExerciseMuscle = await this.exerciseMuscleRepository.findOne(
+        {
+          where: {
+            exerciseId: exercise.id,
+            isPrimary: true,
+          },
+        },
+      );
+
+      if (!primaryExerciseMuscle) {
+        throw new NotFoundException('Основной мышцы не существует');
+      }
+
+      const preloadedExerciseMuscle =
+        await this.exerciseMuscleRepository.preload({
+          id: primaryExerciseMuscle.id,
+          muscleId: dto.primaryMuscleId,
+          isPrimary: true,
+        });
+
+      if (preloadedExerciseMuscle) {
+        await this.exerciseMuscleRepository.save(preloadedExerciseMuscle);
+      }
+    }
+
+    if (dto.secondaryMuscleIds && dto.secondaryMuscleIds?.length > 0) {
+      const secondaryMusclesCheck = await this.muscleRepository.findBy({
+        id: In(dto.secondaryMuscleIds),
+      });
+
+      if (dto.secondaryMuscleIds.length !== secondaryMusclesCheck.length) {
+        throw new NotFoundException('Дополнительные мышцы не найдены');
+      }
+
+      const secondaryExerciseMuscleIds =
+        await this.exerciseMuscleRepository.find({
+          where: {
+            exerciseId: exercise.id,
+            isPrimary: false,
+          },
+        });
+
+      if (secondaryExerciseMuscleIds.length > 0) {
+        await this.exerciseMuscleRepository.delete(secondaryExerciseMuscleIds);
+      }
+
+      const relations: ExerciseMuscle[] = [];
+
+      for (const muscleId of dto.secondaryMuscleIds) {
+        relations.push(
+          this.exerciseMuscleRepository.create({
+            exerciseId: exercise.id,
+            muscleId,
+            isPrimary: false,
+          }),
+        );
+      }
+      await this.exerciseMuscleRepository.save(relations);
+    }
+
+    if (image) {
+      console.log('exercise.image', exercise.image);
+      console.log('image', image);
+
+      if (exercise.image) {
+        const oldPath = join(process.cwd(), exercise.image);
+        await unlink(oldPath).catch(console.error);
+      }
+
+      exercise.image = image;
+
+      console.log('image set');
+    }
+
+    await this.exerciseRepository.save(exercise);
+
+    return { success: true };
   }
 
   async deleteExercise(exerciseId: number, req: CustomRequest) {
