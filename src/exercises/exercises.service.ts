@@ -21,6 +21,7 @@ import { join } from 'path';
 import { unlink } from 'fs/promises';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { ExerciseMuscle } from '../exercises-muscles/exercise-muscle.entity';
+import { AddTrainingProgramDetailsDto } from '../training-programs/dto/add-details.dto';
 
 @Injectable()
 export class ExercisesService {
@@ -336,5 +337,32 @@ export class ExercisesService {
     } catch (e) {
       throw new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  // Checking if exercises exists
+  // And if exercises are user's
+  async checkExercisesToAdd(dto: AddTrainingProgramDetailsDto, userId: number) {
+    const exerciseIds: number[] = [];
+    for (const day of dto.details) {
+      day.exercises.forEach((exercise) => {
+        exerciseIds.push(exercise.exerciseId);
+      });
+    }
+
+    const exercises = await this.exerciseRepository.findBy({
+      id: In(exerciseIds),
+    });
+
+    if (exerciseIds.length !== exercises.length) {
+      return false;
+    }
+
+    for (const exercise of exercises) {
+      if (exercise.userId !== null && exercise.userId !== userId) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Req,
   UploadedFile,
   UseGuards,
@@ -15,6 +16,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateProgramDto } from './dto/create-program.dto';
 import type { CustomRequest } from '../common/types/custom-request';
 import { createImageInterceptor } from '../common/interceptors/image.interceptor';
+import { AddTrainingProgramDetailsDto } from './dto/add-details.dto';
 
 @Controller('training-programs')
 export class TrainingProgramsController {
@@ -59,6 +61,22 @@ export class TrainingProgramsController {
   @UseGuards(JwtAuthGuard)
   getTrainingProgram(@Param('id') id: string, @Req() req: CustomRequest) {
     return this.trainingProgramService.getTrainingProgram(Number(id), req);
+  }
+
+  // Добавление дней + упражнений в программу тренировок
+  // Изменение названия, описания, изображения будет сделано через другой endpoint
+  @Put(':id')
+  // @UseGuards(JwtAuthGuard)
+  addTrainingProgramDetails(
+    @Param('id') id: string,
+    @Req() req: CustomRequest,
+    @Body() addDetails: AddTrainingProgramDetailsDto,
+  ) {
+    return this.trainingProgramService.addTrainingProgramDetails(
+      Number(id),
+      req,
+      addDetails,
+    );
   }
 
   @Post()

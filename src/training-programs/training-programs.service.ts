@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -12,10 +13,13 @@ import { CreateProgramDto } from './dto/create-program.dto';
 import { CustomRequest } from '../common/types/custom-request';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/user.entity';
-import { ConfigService } from '@nestjs/config';
 import { TrainingProgramDay } from '../training-program-days/training-program-day.entity';
 import { join } from 'path';
 import { unlink } from 'fs/promises';
+import { AddTrainingProgramDetailsDto } from './dto/add-details.dto';
+import { TrainingProgramDaysService } from '../training-program-days/training-program-days.service';
+import { TrainingProgramExercise } from '../training-program-exercises/training-program-exercise.entity';
+import { ExercisesService } from '../exercises/exercises.service';
 
 @Injectable()
 export class TrainingProgramsService {
@@ -25,7 +29,12 @@ export class TrainingProgramsService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private userService: UsersService,
-    private configService: ConfigService,
+    @InjectRepository(TrainingProgramDay)
+    private programDaysRepository: Repository<TrainingProgramDay>,
+    private programDaysService: TrainingProgramDaysService,
+    @InjectRepository(TrainingProgramExercise)
+    private programExercisesRepository: Repository<TrainingProgramExercise>,
+    private exerciseService: ExercisesService,
   ) {}
 
   async getAllPublicTrainingPrograms() {
@@ -269,5 +278,83 @@ export class TrainingProgramsService {
     } catch (e) {
       throw new HttpException(e, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  async addTrainingProgramDetails(
+    id: number,
+    req: CustomRequest,
+    dto: AddTrainingProgramDetailsDto,
+  ) {
+    const userId = req.user.userId;
+    // const userId = 85;
+    const data = dto.details;
+
+    const areDaysUniq = this.programDaysService.checkIfDaysUnique(dto);
+
+    if (!areDaysUniq) {
+      throw new BadRequestException({
+        status: 'В программе не может быть одинаковых дней',
+      });
+    }
+
+    const exercisesExist = await this.exerciseService.checkExercisesToAdd(
+      dto,
+      userId,
+    );
+
+    if (!exercisesExist) {
+      throw new NotFoundException({
+        status:
+          'Упражнения не найдены, либо они принадлежат другому пользователю',
+      });
+    }
+
+    const program = await this.programRepository.findOne({
+      where: { id },
+      relations: ['days'],
+    });
+
+    if (program?.userId !== userId) {
+      throw new ForbiddenException({ status: 'Программа не ваша' });
+    }
+
+    if (program.days.length > 0) {
+      console.log(program.days);
+      await this.programDaysRepository.remove(program.days);
+    }
+
+    let days: TrainingProgramDay[] = [];
+
+    for (const detail of data) {
+      days.push(
+        this.programDaysRepository.create({
+          trainingProgramId: program.id,
+          name: detail.name || undefined,
+          description: detail.description || undefined,
+          dayId: detail.dayId,
+        }),
+      );
+
+      days = await this.programDaysRepository.save(days);
+
+      const exercises: TrainingProgramExercise[] = [];
+      for (const e of detail.exercises) {
+        exercises.push(
+          this.programExercisesRepository.create({
+            trainingProgramDayId: days[0].id,
+            exerciseId: e.exerciseId,
+            exerciseOrder: e.exerciseOrder,
+            reps: e.reps,
+            sets: e.sets,
+          }),
+        );
+      }
+
+      await this.programExercisesRepository.save(exercises);
+
+      days = [];
+    }
+
+    return { success: true };
   }
 }

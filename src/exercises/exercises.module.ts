@@ -30,5 +30,6 @@ import { ExercisesMusclesService } from '../exercises-muscles/exercises-muscles.
     MusclesService,
     ExercisesMusclesService,
   ],
+  exports: [TypeOrmModule, ExercisesService],
 })
 export class ExercisesModule {}

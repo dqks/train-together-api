@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TrainingProgramsController } from './training-programs.controller';
 import { TrainingProgramsService } from './training-programs.service';
 import { TrainingProgram } from './training-program.entity';
@@ -7,10 +7,28 @@ import { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
 import { RolesService } from '../roles/roles.service';
 import { Role } from '../roles/role.entity';
+import { TrainingProgramDay } from '../training-program-days/training-program-day.entity';
+import { TrainingProgramDaysService } from '../training-program-days/training-program-days.service';
+import { TrainingProgramExercise } from '../training-program-exercises/training-program-exercise.entity';
+import { ExercisesModule } from '../exercises/exercises.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TrainingProgram, User, Role])],
+  imports: [
+    TypeOrmModule.forFeature([
+      TrainingProgram,
+      User,
+      Role,
+      TrainingProgramDay,
+      TrainingProgramExercise,
+    ]),
+    forwardRef(() => ExercisesModule),
+  ],
   controllers: [TrainingProgramsController],
-  providers: [TrainingProgramsService, UsersService, RolesService],
+  providers: [
+    TrainingProgramsService,
+    UsersService,
+    RolesService,
+    TrainingProgramDaysService,
+  ],
 })
 export class TrainingProgramsModule {}
