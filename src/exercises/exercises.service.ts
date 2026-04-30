@@ -295,17 +295,12 @@ export class ExercisesService {
     }
 
     if (image) {
-      console.log('exercise.image', exercise.image);
-      console.log('image', image);
-
       if (exercise.image) {
         const oldPath = join(process.cwd(), exercise.image);
         await unlink(oldPath).catch(console.error);
       }
 
       exercise.image = image;
-
-      console.log('image set');
     }
 
     await this.exerciseRepository.save(exercise);

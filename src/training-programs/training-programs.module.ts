@@ -11,6 +11,8 @@ import { TrainingProgramDay } from '../training-program-days/training-program-da
 import { TrainingProgramDaysService } from '../training-program-days/training-program-days.service';
 import { TrainingProgramExercise } from '../training-program-exercises/training-program-exercise.entity';
 import { ExercisesModule } from '../exercises/exercises.module';
+import { Goal } from '../goals/goal.entity';
+import { Difficulty } from '../difficulties/difficulty.entity';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { ExercisesModule } from '../exercises/exercises.module';
       Role,
       TrainingProgramDay,
       TrainingProgramExercise,
+      Goal,
+      Difficulty,
     ]),
     forwardRef(() => ExercisesModule),
   ],

@@ -26,6 +26,8 @@ import {
   Goals,
   SortOptions,
 } from './dto/filter-program.dto';
+import { Difficulty } from '../difficulties/difficulty.entity';
+import { Goal } from '../goals/goal.entity';
 
 enum GoalValues {
   MASS = 'Muscle gain',
@@ -55,6 +57,10 @@ export class TrainingProgramsService {
     @InjectRepository(TrainingProgramExercise)
     private programExercisesRepository: Repository<TrainingProgramExercise>,
     private exerciseService: ExercisesService,
+    @InjectRepository(Goal)
+    private goalRepository: Repository<Goal>,
+    @InjectRepository(Difficulty)
+    private difficultyRepository: Repository<Difficulty>,
   ) {}
 
   async getAllPublicTrainingPrograms(dto: FilterProgramDto) {
@@ -250,8 +256,6 @@ export class TrainingProgramsService {
       ],
     });
 
-    console.log(user?.followedProgramsRelations);
-
     return user?.followedProgramsRelations
       .map((ftp) => ({
         id: ftp.trainingProgram.id,
@@ -354,19 +358,34 @@ export class TrainingProgramsService {
   }
 
   async createTrainingProgram(
-    createProgramDto: CreateProgramDto,
+    dto: CreateProgramDto,
     req: CustomRequest,
     image: string | null,
   ) {
-    const userId = req.user.userId;
-    // const userId = 85;
+    // const userId = req.user.userId;
+    const userId = 85;
+
+    const [goal, difficulty] = await Promise.all([
+      this.goalRepository.findOneBy({ id: dto.goalId }),
+      this.difficultyRepository.findOneBy({ id: dto.diffId }),
+    ]);
+
+    if (!goal) {
+      throw new NotFoundException({ status: 'Цель не найдена' });
+    }
+
+    if (!difficulty) {
+      throw new NotFoundException({ status: 'Сложность не найдена' });
+    }
 
     const newProgram = this.programRepository.create({
       userId: userId,
-      name: createProgramDto.name,
-      description: createProgramDto.description,
-      isPublic: createProgramDto.isPublic === 'true',
+      name: dto.name,
+      description: dto.description,
+      isPublic: dto.isPublic === 'true',
       image: image ? image : undefined,
+      goal,
+      difficulty,
     });
 
     await this.programRepository.save(newProgram);
@@ -475,5 +494,18 @@ export class TrainingProgramsService {
     }
 
     return { success: true };
+  }
+
+  async getCreateInfo() {
+    const goals = await this.goalRepository.find({
+      select: ['id', 'name', 'nameEng', 'sortOrder'],
+      order: { sortOrder: 'ASC' },
+    });
+    const difficulties = await this.difficultyRepository.find({
+      select: ['id', 'name', 'nameEng', 'level'],
+      order: { level: 'ASC' },
+    });
+
+    return { goals, difficulties };
   }
 }

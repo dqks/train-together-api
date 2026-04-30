@@ -35,6 +35,12 @@ export class TrainingProgramsController {
     return this.trainingProgramService.getMyTrainingPrograms(req);
   }
 
+  @Get('create-info')
+  @UseGuards(JwtAuthGuard)
+  getCreateInfo() {
+    return this.trainingProgramService.getCreateInfo();
+  }
+
   @Get('/favourite')
   @UseGuards(JwtAuthGuard)
   getFavouriteTrainingPrograms(@Req() req: CustomRequest) {
@@ -83,7 +89,7 @@ export class TrainingProgramsController {
 
   @Post()
   @UseInterceptors(createImageInterceptor('programs'))
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   createTrainingProgram(
     @Body() createProgramDto: CreateProgramDto,
     @Req() req: CustomRequest,

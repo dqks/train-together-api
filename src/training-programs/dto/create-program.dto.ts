@@ -1,10 +1,14 @@
 import {
+  IsInt,
   IsNotEmpty,
+  IsNumber,
+  IsPositive,
   IsString,
   MaxLength,
   MinLength,
   ValidateIf,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateProgramDto {
   @IsString()
@@ -22,4 +26,14 @@ export class CreateProgramDto {
   @IsString()
   @IsNotEmpty({ message: 'Обязательное поле' })
   readonly isPublic: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsPositive()
+  goalId: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsPositive()
+  diffId: number;
 }
