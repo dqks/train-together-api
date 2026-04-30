@@ -20,6 +20,26 @@ import { AddTrainingProgramDetailsDto } from './dto/add-details.dto';
 import { TrainingProgramDaysService } from '../training-program-days/training-program-days.service';
 import { TrainingProgramExercise } from '../training-program-exercises/training-program-exercise.entity';
 import { ExercisesService } from '../exercises/exercises.service';
+import {
+  Difficulties,
+  FilterProgramDto,
+  Goals,
+  SortOptions,
+} from './dto/filter-program.dto';
+
+enum GoalValues {
+  MASS = 'Muscle gain',
+  STRENGTH = 'Strength',
+  ENDURANCE = 'Endurance',
+  ATHLETICISM = 'Athleticism',
+  OTHER = 'Other',
+}
+
+enum DifficultyValues {
+  BEGINNER = 'Beginner',
+  INTERMEDIATE = 'Intermediate',
+  ADVANCED = 'Advanced',
+}
 
 @Injectable()
 export class TrainingProgramsService {
@@ -37,23 +57,122 @@ export class TrainingProgramsService {
     private exerciseService: ExercisesService,
   ) {}
 
-  async getAllPublicTrainingPrograms() {
-    const trainingPrograms = await this.programRepository.find({
-      where: { isPublic: true },
-      relations: ['user'],
-      order: { createdAt: 'desc' },
-    });
+  async getAllPublicTrainingPrograms(dto: FilterProgramDto) {
+    const query = this.programRepository
+      .createQueryBuilder('program')
+      .select([
+        'program.id as id',
+        'program.name as name',
+        'program.description as description',
+        // 'program.created_at as createdAt',
+        'program.image as imageUrl',
+        'g.name as goalName',
+        'd.name as diffName',
+        'u.nickname as userNickname',
+        'u.id as userId',
+      ])
+      .where('program.isPublic = :isPublic', { isPublic: true })
+      .leftJoinAndSelect('program.user', 'u')
+      .leftJoinAndSelect('program.goal', 'g')
+      .leftJoinAndSelect('program.difficulty', 'd');
+
+    if (dto.goal) {
+      switch (dto.goal) {
+        case Goals.ATHLETICISM:
+          query.andWhere('g.name_en = :goalName', {
+            goalName: GoalValues.ATHLETICISM,
+          });
+          break;
+        case Goals.MASS:
+          query.andWhere('g.name_en = :goalName', {
+            goalName: GoalValues.MASS,
+          });
+          break;
+        case Goals.STRENGTH:
+          query.andWhere('g.name_en = :goalName', {
+            goalName: GoalValues.STRENGTH,
+          });
+          break;
+        case Goals.ENDURANCE:
+          query.andWhere('g.name_en = :goalName', {
+            goalName: GoalValues.ENDURANCE,
+          });
+          break;
+        case Goals.OTHER:
+          query.andWhere('g.nameEn = :goalName', {
+            goalName: GoalValues.OTHER,
+          });
+          break;
+      }
+    }
+
+    if (dto.difficulty) {
+      switch (dto.difficulty) {
+        case Difficulties.BEGINNER:
+          query.andWhere('d.name_en = :diffName', {
+            diffName: DifficultyValues.BEGINNER,
+          });
+          break;
+        case Difficulties.INTERMEDIATE:
+          query.andWhere('d.name_en = :diffName', {
+            diffName: DifficultyValues.INTERMEDIATE,
+          });
+          break;
+        case Difficulties.ADVANCED:
+          query.andWhere('d.name_en = :diffName', {
+            diffName: DifficultyValues.ADVANCED,
+          });
+          break;
+      }
+    }
+
+    if (dto.frequency) {
+      query.andWhere(
+        (subQuery) => {
+          const sub = subQuery
+            .subQuery()
+            .select('COUNT(*)')
+            .from('training_programs_days', 'days')
+            .where('days.id_training_program = program.id')
+            .getQuery();
+
+          return `${sub} = :frequency`;
+        },
+        { frequency: dto.frequency },
+      );
+    }
+
+    const sortBy = dto.sortOption || 'new';
+
+    if (sortBy === SortOptions.POPULAR) {
+      query.addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)')
+          .from('followed_training_programs', 'follow')
+          .where('follow.id_training_program = program.id');
+      }, 'followerscount');
+      query.orderBy('followerscount', 'DESC');
+    } else {
+      query.orderBy('program.created_at', 'DESC');
+    }
+
+    const trainingPrograms = await query.getRawMany();
+
+    console.log(trainingPrograms);
 
     return trainingPrograms.map((p) => ({
       id: p.id,
       name: p.name,
       description: p.description,
-      createdAt: p.createdAt,
-      imageUrl: p.image,
+      // createdAt: p.createdat,
+      imageUrl: p.imageurl,
+      goal: p.goalname,
+      difficulty: p.diffname,
       user: {
-        id: p.user.id,
-        nickname: p.user.nickname,
+        // id: p.userid,
+        nickname: p.usernickname,
       },
+      followersCount: p.followerscount,
     }));
   }
 

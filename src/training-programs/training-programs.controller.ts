@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -17,14 +18,15 @@ import { CreateProgramDto } from './dto/create-program.dto';
 import type { CustomRequest } from '../common/types/custom-request';
 import { createImageInterceptor } from '../common/interceptors/image.interceptor';
 import { AddTrainingProgramDetailsDto } from './dto/add-details.dto';
+import { FilterProgramDto } from './dto/filter-program.dto';
 
 @Controller('training-programs')
 export class TrainingProgramsController {
   constructor(private trainingProgramService: TrainingProgramsService) {}
 
   @Get()
-  getAllPublicTrainingPrograms() {
-    return this.trainingProgramService.getAllPublicTrainingPrograms();
+  getAllPublicTrainingPrograms(@Query() filter: FilterProgramDto) {
+    return this.trainingProgramService.getAllPublicTrainingPrograms(filter);
   }
 
   @Get('/my')
@@ -66,7 +68,7 @@ export class TrainingProgramsController {
   // Добавление дней + упражнений в программу тренировок
   // Изменение названия, описания, изображения будет сделано через другой endpoint
   @Put(':id')
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   addTrainingProgramDetails(
     @Param('id') id: string,
     @Req() req: CustomRequest,

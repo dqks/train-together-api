@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional } from 'class-validator';
+import { IsNumber, IsOptional, IsPositive } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class FilterExerciseDto {
@@ -14,5 +14,6 @@ export class FilterExerciseDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
+  @IsPositive()
   equipmentId?: number;
 }

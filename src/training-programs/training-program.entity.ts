@@ -10,6 +10,8 @@ import {
 import { User } from '../users/user.entity';
 import { TrainingProgramDay } from '../training-program-days/training-program-day.entity';
 import { FollowedTrainingProgram } from '../followed-training-programs/followed-training-programs.entity';
+import { Goal } from '../goals/goal.entity';
+import { Difficulty } from '../difficulties/difficulty.entity';
 
 @Entity({ name: 'training_programs' })
 export class TrainingProgram {
@@ -54,6 +56,20 @@ export class TrainingProgram {
     referencedColumnName: 'id',
   })
   user: User;
+
+  @ManyToOne(() => Goal, { onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'id_goal',
+    referencedColumnName: 'id',
+  })
+  goal: Goal;
+
+  @ManyToOne(() => Difficulty, { onDelete: 'CASCADE' })
+  @JoinColumn({
+    name: 'id_difficulty',
+    referencedColumnName: 'id',
+  })
+  difficulty: Difficulty;
 
   @ManyToMany(() => User, (user) => user.followedPrograms)
   followers: User[];

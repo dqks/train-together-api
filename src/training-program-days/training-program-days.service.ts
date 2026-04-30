@@ -15,6 +15,12 @@ export class TrainingProgramDaysService {
     return this.trainingProgramDayRepository.find({ where: { id: programId } });
   }
 
+  async countDaysOfProgram(programId: number) {
+    return this.trainingProgramDayRepository.count({
+      where: { id: programId },
+    });
+  }
+
   checkIfDaysUnique(dayDetails: AddTrainingProgramDetailsDto) {
     const dayIds = dayDetails.details.map((d) => d.dayId);
     const daySet = new Set(dayIds);
