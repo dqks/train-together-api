@@ -28,6 +28,7 @@ import {
 } from './dto/filter-program.dto';
 import { Difficulty } from '../difficulties/difficulty.entity';
 import { Goal } from '../goals/goal.entity';
+import { UpdateProgramDto } from './dto/update-program.dto';
 
 enum GoalValues {
   MASS = 'Muscle gain',
@@ -507,5 +508,61 @@ export class TrainingProgramsService {
     });
 
     return { goals, difficulties };
+  }
+
+  async updateTrainingProgram(
+    dto: UpdateProgramDto,
+    req: CustomRequest,
+    imagePath: string | null,
+    programId: number,
+  ) {
+    const userId = req.user.userId;
+    // const userId = 85;
+
+    const [goal, difficulty] = await Promise.all([
+      this.goalRepository.findOneBy({ id: dto.goalId }),
+      this.difficultyRepository.findOneBy({ id: dto.diffId }),
+    ]);
+
+    if (!goal) {
+      throw new NotFoundException({ status: 'Цель не найдена' });
+    }
+
+    if (!difficulty) {
+      throw new NotFoundException({ status: 'Сложность не найдена' });
+    }
+
+    const data = {
+      ...dto,
+      isPublic: dto.isPublic === 'true',
+      difficulty,
+      goal,
+    };
+
+    const program = await this.programRepository.preload({
+      id: programId,
+      ...data,
+    });
+
+    if (!program) {
+      throw new NotFoundException({ status: 'Программа не найдена' });
+    }
+
+    if (program.userId !== userId) {
+      throw new ForbiddenException({ status: 'Программа не ваша' });
+    }
+
+    if (imagePath) {
+      if (program.image) {
+        const oldPath = join(process.cwd(), program.image);
+        await unlink(oldPath).catch(console.error);
+      }
+
+      program.image = imagePath;
+    }
+
+    await this.programRepository.save(program);
+
+    return { success: true };
   }
 }

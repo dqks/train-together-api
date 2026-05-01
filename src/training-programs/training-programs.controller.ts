@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -19,6 +20,7 @@ import type { CustomRequest } from '../common/types/custom-request';
 import { createImageInterceptor } from '../common/interceptors/image.interceptor';
 import { AddTrainingProgramDetailsDto } from './dto/add-details.dto';
 import { FilterProgramDto } from './dto/filter-program.dto';
+import { UpdateProgramDto } from './dto/update-program.dto';
 
 @Controller('training-programs')
 export class TrainingProgramsController {
@@ -89,7 +91,7 @@ export class TrainingProgramsController {
 
   @Post()
   @UseInterceptors(createImageInterceptor('programs'))
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   createTrainingProgram(
     @Body() createProgramDto: CreateProgramDto,
     @Req() req: CustomRequest,
@@ -100,6 +102,24 @@ export class TrainingProgramsController {
       createProgramDto,
       req,
       imagePath,
+    );
+  }
+
+  @Patch(':id')
+  @UseInterceptors(createImageInterceptor('programs'))
+  @UseGuards(JwtAuthGuard)
+  updateTrainingProgram(
+    @Body() updateProgramDto: UpdateProgramDto,
+    @Req() req: CustomRequest,
+    @UploadedFile() file: Express.Multer.File,
+    @Param('id') id: string,
+  ) {
+    const imagePath = file ? `/uploads/programs/${file.filename}` : null;
+    return this.trainingProgramService.updateTrainingProgram(
+      updateProgramDto,
+      req,
+      imagePath,
+      +id,
     );
   }
 
