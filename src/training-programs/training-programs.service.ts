@@ -29,6 +29,7 @@ import {
 import { Difficulty } from '../difficulties/difficulty.entity';
 import { Goal } from '../goals/goal.entity';
 import { UpdateProgramDto } from './dto/update-program.dto';
+import { LikedTrainingPrograms } from '../liked-training-programs/liked-training-program.entity';
 
 enum GoalValues {
   MASS = 'Muscle gain',
@@ -62,6 +63,8 @@ export class TrainingProgramsService {
     private goalRepository: Repository<Goal>,
     @InjectRepository(Difficulty)
     private difficultyRepository: Repository<Difficulty>,
+    @InjectRepository(LikedTrainingPrograms)
+    private likedProgramsRepository: Repository<LikedTrainingPrograms>,
   ) {}
 
   async getAllPublicTrainingPrograms(dto: FilterProgramDto) {
@@ -562,6 +565,58 @@ export class TrainingProgramsService {
     }
 
     await this.programRepository.save(program);
+
+    return { success: true };
+  }
+
+  async likeTrainingProgram(id: number, req: CustomRequest) {
+    const userId = req.user.userId;
+    // const userId = 85;
+
+    const trainingProgram = await this.programRepository.findOne({
+      where: { id },
+    });
+
+    if (!trainingProgram) {
+      throw new NotFoundException({ status: 'Программа не найдена' });
+    }
+
+    const likedProgram = this.likedProgramsRepository.create({
+      trainingProgram,
+      user: { id: userId },
+    });
+
+    await this.likedProgramsRepository.save(likedProgram);
+
+    return { success: true };
+  }
+
+  async dislikeTrainingProgram(id: number, req: CustomRequest) {
+    const userId = req.user.userId;
+    // const userId = 85;
+
+    const trainingProgram = await this.programRepository.findOne({
+      where: { id },
+    });
+
+    if (!trainingProgram) {
+      throw new NotFoundException({ status: 'Программа не найдена' });
+    }
+
+    const likedProgram = await this.likedProgramsRepository.findOne({
+      where: {
+        trainingProgram: { id: trainingProgram.id },
+        user: { id: userId },
+      },
+    });
+
+    if (!likedProgram) {
+      throw new NotFoundException({
+        status: 'Пользователь не подписан на программу',
+      });
+    }
+
+    await this.likedProgramsRepository.remove(likedProgram);
 
     return { success: true };
   }

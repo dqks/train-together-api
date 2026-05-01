@@ -12,6 +12,7 @@ import { TrainingProgramDay } from '../training-program-days/training-program-da
 import { FollowedTrainingProgram } from '../followed-training-programs/followed-training-programs.entity';
 import { Goal } from '../goals/goal.entity';
 import { Difficulty } from '../difficulties/difficulty.entity';
+import { LikedTrainingPrograms } from '../liked-training-programs/liked-training-program.entity';
 
 @Entity({ name: 'training_programs' })
 export class TrainingProgram {
@@ -79,4 +80,7 @@ export class TrainingProgram {
 
   @OneToMany(() => FollowedTrainingProgram, (ftp) => ftp.trainingProgram)
   followersRelations: FollowedTrainingProgram[];
+
+  @OneToMany(() => LikedTrainingPrograms, (ltp) => ltp.trainingProgram)
+  likedRelations: LikedTrainingPrograms[];
 }

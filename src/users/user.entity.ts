@@ -16,6 +16,7 @@ import { hash } from 'bcrypt';
 import { Role } from '../roles/role.entity';
 import { TrainingProgram } from '../training-programs/training-program.entity';
 import { FollowedTrainingProgram } from '../followed-training-programs/followed-training-programs.entity';
+import { LikedTrainingPrograms } from '../liked-training-programs/liked-training-program.entity';
 
 @Entity({ name: 'users' })
 @Unique('uq_users_email', ['email'])
@@ -129,6 +130,9 @@ export class User {
 
   @OneToMany(() => FollowedTrainingProgram, (ftp) => ftp.user)
   followedProgramsRelations: FollowedTrainingProgram[];
+
+  @OneToMany(() => LikedTrainingPrograms, (ftp) => ftp.user)
+  likedProgramsRelations: LikedTrainingPrograms[];
 
   // Вспомогательное поле для простого доступа к программам
   @AfterLoad()
