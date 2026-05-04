@@ -166,6 +166,13 @@ export class TrainingProgramsService {
       query.orderBy('program.created_at', 'DESC');
     }
 
+    query.addSelect((subQuery) => {
+      return subQuery
+        .select('COUNT(*)')
+        .from('training_programs_days', 'days')
+        .where('days.id_training_program = program.id');
+    }, 'daysAmount');
+
     const trainingPrograms = await query.getRawMany();
 
     console.log(trainingPrograms);
@@ -183,6 +190,7 @@ export class TrainingProgramsService {
         nickname: p.usernickname,
       },
       followersCount: p.followerscount,
+      daysAmount: p.daysAmount,
     }));
   }
 
@@ -461,7 +469,6 @@ export class TrainingProgramsService {
     }
 
     if (program.days.length > 0) {
-      console.log(program.days);
       await this.programDaysRepository.remove(program.days);
     }
 

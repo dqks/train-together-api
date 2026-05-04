@@ -74,34 +74,69 @@ export class ExercisesService {
       id: e.id,
       name: e.name,
       image: e.image,
+      primaryMuscle: e.exerciseMuscles.reduce((acc, m) => {
+        if (m.isPrimary) {
+          return {
+            id: m.muscle.id,
+            name: m.muscle.name,
+            nameEng: m.muscle.nameEng,
+          };
+        }
+        return acc;
+      }, null),
       // equipment:
       //   e.equipment?.map((eq) => ({
       //     id: eq.id,
       //     name: eq.name,
       //     nameEng: eq.nameEng,
       //   })) || [],
-      muscles:
-        e.exerciseMuscles?.map((m) => ({
-          id: m.muscle.id,
-          name: m.muscle.name,
-          nameEng: m.muscle.nameEng,
-          isPrimary: m.isPrimary,
-        })) || [],
+      secondaryMuscles:
+        e.exerciseMuscles
+          ?.filter((m) => !m.isPrimary)
+          .map((m) => ({
+            id: m.muscle.id,
+            name: m.muscle.name,
+            nameEng: m.muscle.nameEng,
+          })) || [],
     }));
   }
 
   async getMy(req: CustomRequest) {
-    return await this.exerciseRepository.find({
+    const myExercises = await this.exerciseRepository.find({
       select: {
         id: true,
         name: true,
         image: true,
-        muscles: true,
+        exerciseMuscles: true,
       },
       order: { name: 'ASC' },
       where: { userId: req.user.userId },
-      relations: ['muscles'],
+      relations: ['exerciseMuscles', 'exerciseMuscles.muscle'],
     });
+
+    return myExercises.map((e) => ({
+      id: e.id,
+      name: e.name,
+      image: e.image,
+      primaryMuscle: e.exerciseMuscles.reduce((acc, m) => {
+        if (m.isPrimary) {
+          return {
+            id: m.muscle.id,
+            name: m.muscle.name,
+            nameEng: m.muscle.nameEng,
+          };
+        }
+        return acc;
+      }, null),
+      secondaryMuscles:
+        e.exerciseMuscles
+          ?.filter((m) => !m.isPrimary)
+          .map((m) => ({
+            id: m.muscle.id,
+            name: m.muscle.name,
+            nameEng: m.muscle.nameEng,
+          })) || [],
+    }));
   }
 
   async findOne(id: number, req: CustomRequest) {
