@@ -11,6 +11,6 @@ export class EquipmentService {
   ) {}
 
   async getAll() {
-    return this.equipmentRepository.find();
+    return this.equipmentRepository.find({ order: { name: 'ASC' } });
   }
 }

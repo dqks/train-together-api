@@ -11,6 +11,6 @@ export class MusclesService {
   ) {}
 
   async getAll() {
-    return this.muscleRepository.find();
+    return this.muscleRepository.find({ order: { name: 'ASC' } });
   }
 }

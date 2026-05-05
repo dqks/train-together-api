@@ -226,6 +226,10 @@ export class TrainingProgramsService {
       isFollowed = true;
     }
 
+    const userProgramsCount = await this.programRepository.count({
+      where: { userId: p.userId },
+    });
+
     return {
       id: p.id,
       name: p.name,
@@ -236,6 +240,8 @@ export class TrainingProgramsService {
       user: {
         id: p.user.id,
         nickname: p.user.nickname,
+        avatarUrl: p.user.avatar,
+        programsCount: userProgramsCount,
       },
       days: p.days.map((day: TrainingProgramDay) => ({
         id: day.id,
