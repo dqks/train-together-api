@@ -34,31 +34,31 @@ export class Exercise {
   })
   description: string;
 
-  @Column({
-    name: 'technique_json',
-    nullable: true,
-    type: 'jsonb',
-  })
-  techniqueJson: object;
+  // @Column({
+  //   name: 'technique_json',
+  //   nullable: true,
+  //   type: 'jsonb',
+  // })
+  // techniqueJson: object;
 
   @Column({
     name: 'advice',
     nullable: false,
-    type: 'text',
+    type: 'jsonb',
   })
   advice: string;
 
-  @Column({
-    name: 'advice_json',
-    nullable: true,
-    type: 'json',
-  })
+  // @Column({
+  //   name: 'advice_json',
+  //   nullable: true,
+  //   type: 'json',
+  // })
   adviceJson: object;
 
   @Column({
     name: 'technique',
     nullable: false,
-    type: 'text',
+    type: 'jsonb',
   })
   technique: string;
 

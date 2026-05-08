@@ -14,6 +14,7 @@ import { ExercisesModule } from '../exercises/exercises.module';
 import { Goal } from '../goals/goal.entity';
 import { Difficulty } from '../difficulties/difficulty.entity';
 import { LikedTrainingPrograms } from '../liked-training-programs/liked-training-program.entity';
+import { FollowedTrainingProgram } from '../followed-training-programs/followed-training-programs.entity';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { LikedTrainingPrograms } from '../liked-training-programs/liked-training
       Goal,
       Difficulty,
       LikedTrainingPrograms,
+      FollowedTrainingProgram,
     ]),
     forwardRef(() => ExercisesModule),
   ],
@@ -36,5 +38,6 @@ import { LikedTrainingPrograms } from '../liked-training-programs/liked-training
     RolesService,
     TrainingProgramDaysService,
   ],
+  exports: [TrainingProgramsService],
 })
 export class TrainingProgramsModule {}

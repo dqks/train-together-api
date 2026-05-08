@@ -30,6 +30,7 @@ import { Difficulty } from '../difficulties/difficulty.entity';
 import { Goal } from '../goals/goal.entity';
 import { UpdateProgramDto } from './dto/update-program.dto';
 import { LikedTrainingPrograms } from '../liked-training-programs/liked-training-program.entity';
+import { FollowedTrainingProgram } from '../followed-training-programs/followed-training-programs.entity';
 
 enum GoalValues {
   MASS = 'Muscle gain',
@@ -65,9 +66,12 @@ export class TrainingProgramsService {
     private difficultyRepository: Repository<Difficulty>,
     @InjectRepository(LikedTrainingPrograms)
     private likedProgramsRepository: Repository<LikedTrainingPrograms>,
+    @InjectRepository(FollowedTrainingProgram)
+    private followedProgramsRepository: Repository<FollowedTrainingProgram>,
   ) {}
 
   async getAllPublicTrainingPrograms(dto: FilterProgramDto) {
+    //Создание запроса
     const query = this.programRepository
       .createQueryBuilder('program')
       .select([
@@ -86,6 +90,8 @@ export class TrainingProgramsService {
       .leftJoinAndSelect('program.goal', 'g')
       .leftJoinAndSelect('program.difficulty', 'd');
 
+    // Если есть query параметр
+    // для фильтрации по цели
     if (dto.goal) {
       switch (dto.goal) {
         case Goals.ATHLETICISM:
@@ -116,6 +122,8 @@ export class TrainingProgramsService {
       }
     }
 
+    // Если есть query параметр
+    // для фильтрации по сложности
     if (dto.difficulty) {
       switch (dto.difficulty) {
         case Difficulties.BEGINNER:
@@ -136,6 +144,8 @@ export class TrainingProgramsService {
       }
     }
 
+    // Если есть query параметр
+    // для фильтрации по кол-ву дней
     if (dto.frequency) {
       query.andWhere(
         (subQuery) => {
@@ -154,6 +164,7 @@ export class TrainingProgramsService {
 
     const sortBy = dto.sortOption || 'new';
 
+    // Применение сортировки
     if (sortBy === SortOptions.POPULAR) {
       query.addSelect((subQuery) => {
         return subQuery
@@ -166,6 +177,7 @@ export class TrainingProgramsService {
       query.orderBy('program.created_at', 'DESC');
     }
 
+    // Подсчет количества дней в программе
     query.addSelect((subQuery) => {
       return subQuery
         .select('COUNT(*)')
@@ -173,20 +185,18 @@ export class TrainingProgramsService {
         .where('days.id_training_program = program.id');
     }, 'daysAmount');
 
+    // Выполнение запроса
     const trainingPrograms = await query.getRawMany();
 
-    console.log(trainingPrograms);
-
+    // Преобразование запроса
     return trainingPrograms.map((p) => ({
       id: p.id,
       name: p.name,
       description: p.description,
-      // createdAt: p.createdat,
       imageUrl: p.imageurl,
       goal: p.goalname,
       difficulty: p.diffname,
       user: {
-        // id: p.userid,
         nickname: p.usernickname,
       },
       followersCount: p.followerscount,
@@ -198,17 +208,24 @@ export class TrainingProgramsService {
     if (!id || isNaN(id)) {
       throw new BadRequestException('Invalid ID');
     }
+    //Создание запроса
     const p = await this.programRepository.findOne({
       where: { id },
       relations: [
+        'goal',
+        'difficulty',
         'user',
         'days',
         'days.day',
         'days.exercises',
         'days.exercises.exercise',
+        'days.exercises.exercise.exerciseMuscles',
+        'days.exercises.exercise.exerciseMuscles.muscle',
       ],
     });
 
+    // Если программа не найдена или она не публичная,
+    // или она не публичная, но не текущего пользователя
     if (!p || (!p.isPublic && p.userId !== req.user.userId)) {
       throw new HttpException(
         { status: ['Программа не найдена'] },
@@ -226,8 +243,11 @@ export class TrainingProgramsService {
       isFollowed = true;
     }
 
-    const userProgramsCount = await this.programRepository.count({
-      where: { userId: p.userId },
+    const userProgramsCount = await this.userService.countUserPrograms(
+      p.userId,
+    );
+    const programFollowsCount = await this.followedProgramsRepository.count({
+      where: { trainingProgram: { id: p.id } },
     });
 
     return {
@@ -237,23 +257,35 @@ export class TrainingProgramsService {
       description: p.description,
       createdAt: p.createdAt,
       imageUrl: p.image,
+      followsCount: programFollowsCount,
+      goal: {
+        name: p.goal.name,
+        nameEng: p.goal.nameEng,
+      },
+      difficulty: {
+        name: p.difficulty.name,
+        nameEng: p.difficulty.nameEng,
+      },
       user: {
         id: p.user.id,
         nickname: p.user.nickname,
         avatarUrl: p.user.avatar,
         programsCount: userProgramsCount,
       },
-      days: p.days.map((day: TrainingProgramDay) => ({
+      days: p?.days?.map((day: TrainingProgramDay) => ({
         id: day.id,
         name: day.name,
         description: day.description,
         day: day.day,
-        exercises: day.exercises.map((exercise) => ({
+        exercises: day?.exercises?.map((exercise) => ({
           id: exercise.id,
           sets: exercise.sets,
           reps: exercise.reps,
           exerciseOrder: exercise.exerciseOrder,
           exercise: {
+            primaryMuscle: exercise.exercise.exerciseMuscles.find(
+              (em) => em.isPrimary,
+            )?.muscle,
             id: exercise.exercise.id,
             name: exercise.exercise.name,
             image: exercise.exercise.image,
@@ -357,14 +389,16 @@ export class TrainingProgramsService {
   }
 
   async getMyTrainingPrograms(req: CustomRequest) {
+    // Получение id пользователя из кук
     const userId: number = req.user.userId;
-
+    // Создание и выполнение запроса
     const program = await this.programRepository.find({
       select: ['id', 'name', 'description', 'userId', 'createdAt', 'image'],
       where: { userId },
       order: { createdAt: 'desc' },
     });
 
+    // Преобразование результата
     return program.map((p) => ({
       id: p.id,
       name: p.name,
@@ -532,8 +566,8 @@ export class TrainingProgramsService {
     imagePath: string | null,
     programId: number,
   ) {
-    const userId = req.user.userId;
-    // const userId = 85;
+    // const userId = req.user.userId;
+    const userId = 85;
 
     const [goal, difficulty] = await Promise.all([
       this.goalRepository.findOneBy({ id: dto.goalId }),

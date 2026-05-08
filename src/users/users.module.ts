@@ -7,10 +7,11 @@ import { AuthModule } from '../auth/auth.module';
 import { RolesService } from '../roles/roles.service';
 import { RolesModule } from '../roles/roles.module';
 import { Role } from '../roles/role.entity';
+import { TrainingProgram } from '../training-programs/training-program.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Role]),
+    TypeOrmModule.forFeature([User, Role, TrainingProgram]),
     forwardRef(() => AuthModule),
     RolesModule,
   ],

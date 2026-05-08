@@ -107,7 +107,7 @@ export class TrainingProgramsController {
 
   @Patch(':id')
   @UseInterceptors(createImageInterceptor('programs'))
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   updateTrainingProgram(
     @Body() updateProgramDto: UpdateProgramDto,
     @Req() req: CustomRequest,
@@ -129,15 +129,15 @@ export class TrainingProgramsController {
     return this.trainingProgramService.deleteTrainingProgram(+id, req);
   }
 
-  @Post('like/:id')
+  // @Post('like/:id')
   // @UseGuards(JwtAuthGuard)
-  likeTrainingProgram(@Param('id') id: string, @Req() req: CustomRequest) {
-    return this.trainingProgramService.likeTrainingProgram(+id, req);
-  }
-
-  @Delete('like/:id')
+  // likeTrainingProgram(@Param('id') id: string, @Req() req: CustomRequest) {
+  //   return this.trainingProgramService.likeTrainingProgram(+id, req);
+  // }
+  //
+  // @Delete('like/:id')
   // @UseGuards(JwtAuthGuard)
-  dislikeTrainingProgram(@Param('id') id: string, @Req() req: CustomRequest) {
-    return this.trainingProgramService.dislikeTrainingProgram(+id, req);
-  }
+  // dislikeTrainingProgram(@Param('id') id: string, @Req() req: CustomRequest) {
+  //   return this.trainingProgramService.dislikeTrainingProgram(+id, req);
+  // }
 }

@@ -4,12 +4,16 @@ import { User } from './user.entity';
 import { Repository } from 'typeorm';
 import { RegistrationDto } from '../auth/dto/registration.dto';
 import { RolesService } from '../roles/roles.service';
+import { TrainingProgram } from '../training-programs/training-program.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User) private usersRepository: Repository<User>,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
     private roleService: RolesService,
+    @InjectRepository(TrainingProgram)
+    private programRepository: Repository<TrainingProgram>,
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -18,12 +22,27 @@ export class UsersService {
     });
   }
 
-  async findOne(id: number): Promise<User> {
+  async countUserPrograms(userId: number) {
+    return await this.programRepository.count({
+      where: { userId },
+    });
+  }
+
+  async findOne(id: number) {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-    return user;
+
+    const programCount = await this.countUserPrograms(user.id);
+
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      email: user.email,
+      programCount,
+      avatarUrl: user.avatar,
+    };
   }
 
   async getUserByEmail(email: string): Promise<User | null> {

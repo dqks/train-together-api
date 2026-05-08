@@ -45,6 +45,7 @@ export class ExercisesService {
     const hasMuscleFilter = filter.primaryMuscles?.length;
     const hasEquipmentFilter = filter.equipmentId;
 
+    // Составление запроса к БД
     const query = this.exerciseRepository
       .createQueryBuilder('exercise')
       .select(['exercise.id', 'exercise.name', 'exercise.image'])
@@ -54,12 +55,14 @@ export class ExercisesService {
       .orderBy('exercise.name', 'ASC')
       .where('exercise.userId IS NULL');
 
+    // Если есть query параметр оборудования
     if (hasEquipmentFilter) {
       query.andWhere('equipment.id = :equipmentId', {
         equipmentId: filter.equipmentId,
       });
     }
 
+    // Если есть query параметр мышечных групп
     if (hasMuscleFilter) {
       query
         .andWhere('em.muscleId IN (:...muscleIds)', {
@@ -68,8 +71,10 @@ export class ExercisesService {
         .andWhere('em.isPrimary = true');
     }
 
+    // Выполнение запроса
     const exercises = await query.getMany();
 
+    // Преобразование ответа
     return exercises.map((e) => ({
       id: e.id,
       name: e.name,
@@ -84,12 +89,6 @@ export class ExercisesService {
         }
         return acc;
       }, null),
-      // equipment:
-      //   e.equipment?.map((eq) => ({
-      //     id: eq.id,
-      //     name: eq.name,
-      //     nameEng: eq.nameEng,
-      //   })) || [],
       secondaryMuscles:
         e.exerciseMuscles
           ?.filter((m) => !m.isPrimary)
@@ -102,6 +101,7 @@ export class ExercisesService {
   }
 
   async getMy(req: CustomRequest) {
+    // Создание и выполнение запроса
     const myExercises = await this.exerciseRepository.find({
       select: {
         id: true,
@@ -114,6 +114,7 @@ export class ExercisesService {
       relations: ['exerciseMuscles', 'exerciseMuscles.muscle'],
     });
 
+    // Преобразование ответа
     return myExercises.map((e) => ({
       id: e.id,
       name: e.name,
@@ -140,7 +141,10 @@ export class ExercisesService {
   }
 
   async findOne(id: number, req: CustomRequest) {
-    const exercise = await this.exerciseRepository.findOne({ where: { id } });
+    const exercise = await this.exerciseRepository.findOne({
+      where: { id },
+      relations: ['equipment', 'exerciseMuscles', 'exerciseMuscles.muscle'],
+    });
 
     if (!exercise) {
       throw new HttpException(
@@ -156,7 +160,34 @@ export class ExercisesService {
       );
     }
 
-    return exercise;
+    return {
+      id: exercise.id,
+      name: exercise.name,
+      image: exercise.image,
+      description: exercise.description,
+      userId: exercise.userId,
+      advice: exercise.advice,
+      technique: exercise.technique,
+      primaryMuscle: exercise.exerciseMuscles.reduce((acc, m) => {
+        if (m.isPrimary) {
+          return {
+            id: m.muscle.id,
+            name: m.muscle.name,
+            nameEng: m.muscle.nameEng,
+          };
+        }
+        return acc;
+      }, null),
+      secondaryMuscles:
+        exercise.exerciseMuscles
+          ?.filter((m) => !m.isPrimary)
+          .map((m) => ({
+            id: m.muscle.id,
+            name: m.muscle.name,
+            nameEng: m.muscle.nameEng,
+          })) || [],
+      equipment: exercise.equipment[0],
+    };
   }
 
   async getUserExercises(userId: number) {
@@ -168,11 +199,12 @@ export class ExercisesService {
     req: CustomRequest,
     image: string | null,
   ) {
-    const userId = 85;
-    // const userId = req.user.userId;
+    const userId = req.user.userId;
 
+    // Получаем все упражнения пользователя
     const userExercises = await this.getUserExercises(userId);
 
+    // Проверка на кол-во упражнений, максимум 7
     if (userExercises.length >= 7) {
       throw new HttpException(
         'У пользователя может быть максимум 7 упражнений',
@@ -180,12 +212,14 @@ export class ExercisesService {
       );
     }
 
+    // Основная мышца не может быть во второстепенных
     if (dto.secondaryMuscleIds.includes(dto.primaryMuscleId)) {
       throw new BadRequestException(
         'Основная мышечная группа не может быть во второстепенных',
       );
     }
 
+    // Проверка на существование всех сущностей
     const [primaryMuscle, secondaryMuscles, equipment, progressionType] =
       await Promise.all([
         this.muscleRepository.findOneBy({ id: dto.primaryMuscleId }),
@@ -208,6 +242,7 @@ export class ExercisesService {
     const userExerciseType =
       await this.exerciseTypeService.getUserExerciseType();
 
+    // Создание упражнения
     const newExercise = this.exerciseRepository.create({
       userId,
       name: dto.name,
@@ -222,12 +257,14 @@ export class ExercisesService {
 
     const insertedExercise = await this.exerciseRepository.save(newExercise);
 
+    // Добавляем упражнению мышцы
     await this.exerciseMusclesService.createExerciseMuscles(
       insertedExercise.id,
       primaryMuscle.id,
       secondaryMuscles.map((m) => m.id),
     );
 
+    // Возвращаем ответ
     return {
       success: true,
     };
@@ -264,9 +301,9 @@ export class ExercisesService {
       throw new NotFoundException('Упражнение не найдено');
     }
 
-    if (exercise.userId !== userId) {
-      throw new BadRequestException('Упражнение не ваше');
-    }
+    // if (exercise.userId !== userId) {
+    //   throw new BadRequestException('Упражнение не ваше');
+    // }
 
     if (dto.primaryMuscleId) {
       const primaryExerciseMuscle = await this.exerciseMuscleRepository.findOne(
@@ -383,9 +420,11 @@ export class ExercisesService {
       id: In(exerciseIds),
     });
 
-    if (exerciseIds.length !== exercises.length) {
-      return false;
-    }
+    console.log(exercises);
+
+    // if (exerciseIds.length !== exercises.length) {
+    //   return false;
+    // }
 
     for (const exercise of exercises) {
       if (exercise.userId !== null && exercise.userId !== userId) {
