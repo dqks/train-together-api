@@ -15,6 +15,7 @@ import { Goal } from '../goals/goal.entity';
 import { Difficulty } from '../difficulties/difficulty.entity';
 import { LikedTrainingPrograms } from '../liked-training-programs/liked-training-program.entity';
 import { FollowedTrainingProgram } from '../followed-training-programs/followed-training-programs.entity';
+import { AppService } from '../app.service';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { FollowedTrainingProgram } from '../followed-training-programs/followed-
     UsersService,
     RolesService,
     TrainingProgramDaysService,
+    AppService,
   ],
   exports: [TrainingProgramsService],
 })

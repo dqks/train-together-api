@@ -22,6 +22,7 @@ import { unlink } from 'fs/promises';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { ExerciseMuscle } from '../exercises-muscles/exercise-muscle.entity';
 import { AddTrainingProgramDetailsDto } from '../training-programs/dto/add-details.dto';
+import { AppService } from '../app.service';
 
 @Injectable()
 export class ExercisesService {
@@ -31,6 +32,7 @@ export class ExercisesService {
     private exerciseTypeService: ExerciseTypesService,
     private muscleService: MusclesService,
     private exerciseMusclesService: ExercisesMusclesService,
+    private appService: AppService,
     @InjectRepository(Muscle)
     private muscleRepository: Repository<Muscle>,
     @InjectRepository(Equipment)
@@ -78,7 +80,7 @@ export class ExercisesService {
     return exercises.map((e) => ({
       id: e.id,
       name: e.name,
-      image: e.image,
+      image: this.appService.getImageUrl(e.image),
       primaryMuscle: e.exerciseMuscles.reduce((acc, m) => {
         if (m.isPrimary) {
           return {
@@ -118,7 +120,7 @@ export class ExercisesService {
     return myExercises.map((e) => ({
       id: e.id,
       name: e.name,
-      image: e.image,
+      image: this.appService.getImageUrl(e.image),
       primaryMuscle: e.exerciseMuscles.reduce((acc, m) => {
         if (m.isPrimary) {
           return {
@@ -143,7 +145,12 @@ export class ExercisesService {
   async findOne(id: number, req: CustomRequest) {
     const exercise = await this.exerciseRepository.findOne({
       where: { id },
-      relations: ['equipment', 'exerciseMuscles', 'exerciseMuscles.muscle'],
+      relations: [
+        'equipment',
+        'exerciseMuscles',
+        'exerciseMuscles.muscle',
+        'exerciseProgressionType',
+      ],
     });
 
     if (!exercise) {
@@ -163,7 +170,7 @@ export class ExercisesService {
     return {
       id: exercise.id,
       name: exercise.name,
-      image: exercise.image,
+      image: this.appService.getImageUrl(exercise.image),
       description: exercise.description,
       userId: exercise.userId,
       advice: exercise.advice,
@@ -187,6 +194,7 @@ export class ExercisesService {
             nameEng: m.muscle.nameEng,
           })) || [],
       equipment: exercise.equipment[0],
+      exerciseProgressionType: exercise.exerciseProgressionType,
     };
   }
 

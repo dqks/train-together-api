@@ -11,6 +11,7 @@ import { ExerciseMuscle } from '../exercises-muscles/exercise-muscle.entity';
 import { Equipment } from '../equipment/equipment.entity';
 import { ExerciseProgressionType } from '../exercise-progression-types/exercise-progression-type.entity';
 import { ExercisesMusclesService } from '../exercises-muscles/exercises-muscles.service';
+import { AppService } from '../app.service';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ExercisesMusclesService } from '../exercises-muscles/exercises-muscles.
     ExerciseTypesService,
     MusclesService,
     ExercisesMusclesService,
+    AppService,
   ],
   exports: [TypeOrmModule, ExercisesService],
 })

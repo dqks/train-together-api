@@ -62,7 +62,7 @@ export class ExercisesController {
 
   @Post()
   @UseInterceptors(createImageInterceptor('exercises'))
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   createExercise(
     @Body() createExerciseDto: CreateExerciseDto,
     @Req() req: CustomRequest,

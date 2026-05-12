@@ -31,6 +31,7 @@ import { Goal } from '../goals/goal.entity';
 import { UpdateProgramDto } from './dto/update-program.dto';
 import { LikedTrainingPrograms } from '../liked-training-programs/liked-training-program.entity';
 import { FollowedTrainingProgram } from '../followed-training-programs/followed-training-programs.entity';
+import { AppService } from '../app.service';
 
 enum GoalValues {
   MASS = 'Muscle gain',
@@ -57,6 +58,7 @@ export class TrainingProgramsService {
     @InjectRepository(TrainingProgramDay)
     private programDaysRepository: Repository<TrainingProgramDay>,
     private programDaysService: TrainingProgramDaysService,
+    private appService: AppService,
     @InjectRepository(TrainingProgramExercise)
     private programExercisesRepository: Repository<TrainingProgramExercise>,
     private exerciseService: ExercisesService,
@@ -193,7 +195,7 @@ export class TrainingProgramsService {
       id: p.id,
       name: p.name,
       description: p.description,
-      imageUrl: p.imageurl,
+      imageUrl: this.appService.getImageUrl(p.imageurl),
       goal: p.goalname,
       difficulty: p.diffname,
       user: {
@@ -256,7 +258,7 @@ export class TrainingProgramsService {
       isFollowed,
       description: p.description,
       createdAt: p.createdAt,
-      imageUrl: p.image,
+      imageUrl: this.appService.getImageUrl(p.image),
       followsCount: programFollowsCount,
       goal: {
         name: p.goal.name,
@@ -312,7 +314,7 @@ export class TrainingProgramsService {
         name: ftp.trainingProgram.name,
         description: ftp.trainingProgram.description,
         createdAt: ftp.createdAt,
-        imageUrl: ftp.trainingProgram.image,
+        imageUrl: this.appService.getImageUrl(ftp.trainingProgram.image),
         user: {
           id: ftp.trainingProgram.user.id,
           nickname: ftp.trainingProgram.user.nickname,
@@ -405,7 +407,7 @@ export class TrainingProgramsService {
       description: p.description,
       userId: p.userId,
       createdAt: p.createdAt,
-      imageUrl: p.image,
+      imageUrl: this.appService.getImageUrl(p.image),
     }));
   }
 
