@@ -54,7 +54,7 @@ export class ExercisesService {
       .leftJoinAndSelect('exercise.exerciseMuscles', 'em')
       .leftJoinAndSelect('em.muscle', 'muscle')
       .leftJoinAndSelect('exercise.equipment', 'equipment')
-      .orderBy('exercise.name', 'ASC')
+      // .orderBy('exercise.name', 'ASC')
       .where('exercise.userId IS NULL');
 
     // Если есть query параметр оборудования
@@ -66,12 +66,25 @@ export class ExercisesService {
 
     // Если есть query параметр мышечных групп
     if (hasMuscleFilter) {
-      query
-        .andWhere('em.muscleId IN (:...muscleIds)', {
+      // query
+      //   .andWhere('em.muscleId IN (:...muscleIds)', {
+      //     muscleIds: filter.primaryMuscles,
+      //   })
+      //   .andWhere('em.isPrimary = true');
+      const subQuery = this.exerciseRepository
+        .createQueryBuilder('e')
+        .select('e.id')
+        .innerJoin('e.exerciseMuscles', 'em_filter')
+        .where('em_filter.muscleId IN (:...muscleIds)', {
           muscleIds: filter.primaryMuscles,
         })
-        .andWhere('em.isPrimary = true');
+        .andWhere('em_filter.isPrimary = true');
+
+      query.andWhere(`exercise.id IN (${subQuery.getQuery()})`);
+      query.setParameters(subQuery.getParameters());
     }
+
+    query.orderBy('exercise.name', 'ASC');
 
     // Выполнение запроса
     const exercises = await query.getMany();
@@ -92,7 +105,7 @@ export class ExercisesService {
         return acc;
       }, null),
       secondaryMuscles:
-        e.exerciseMuscles
+        e?.exerciseMuscles
           ?.filter((m) => !m.isPrimary)
           .map((m) => ({
             id: m.muscle.id,
@@ -208,6 +221,7 @@ export class ExercisesService {
     image: string | null,
   ) {
     const userId = req.user.userId;
+    // const userId = 85;
 
     // Получаем все упражнения пользователя
     const userExercises = await this.getUserExercises(userId);
@@ -286,6 +300,7 @@ export class ExercisesService {
   ) {
     const userId = 85;
     // const userId = req.user.userId
+    console.log(dto);
 
     const data = {
       name: dto.name || undefined,
@@ -309,11 +324,17 @@ export class ExercisesService {
       throw new NotFoundException('Упражнение не найдено');
     }
 
-    // if (exercise.userId !== userId) {
-    //   throw new BadRequestException('Упражнение не ваше');
-    // }
+    if (exercise.userId !== userId) {
+      throw new BadRequestException('Упражнение не ваше');
+    }
 
     if (dto.primaryMuscleId) {
+      if (dto?.secondaryMuscleIds?.includes(dto?.primaryMuscleId)) {
+        throw new BadRequestException(
+          'Дополнительные мышечные группы не могут содержать основную',
+        );
+      }
+
       const primaryExerciseMuscle = await this.exerciseMuscleRepository.findOne(
         {
           where: {
@@ -339,7 +360,7 @@ export class ExercisesService {
       }
     }
 
-    if (dto.secondaryMuscleIds && dto.secondaryMuscleIds?.length > 0) {
+    if (dto.secondaryMuscleIds) {
       const secondaryMusclesCheck = await this.muscleRepository.findBy({
         id: In(dto.secondaryMuscleIds),
       });
@@ -360,18 +381,19 @@ export class ExercisesService {
         await this.exerciseMuscleRepository.delete(secondaryExerciseMuscleIds);
       }
 
-      const relations: ExerciseMuscle[] = [];
-
-      for (const muscleId of dto.secondaryMuscleIds) {
-        relations.push(
-          this.exerciseMuscleRepository.create({
-            exerciseId: exercise.id,
-            muscleId,
-            isPrimary: false,
-          }),
-        );
+      if (dto.secondaryMuscleIds?.length > 0) {
+        const relations: ExerciseMuscle[] = [];
+        for (const muscleId of dto.secondaryMuscleIds) {
+          relations.push(
+            this.exerciseMuscleRepository.create({
+              exerciseId: exercise.id,
+              muscleId,
+              isPrimary: false,
+            }),
+          );
+        }
+        await this.exerciseMuscleRepository.save(relations);
       }
-      await this.exerciseMuscleRepository.save(relations);
     }
 
     if (image) {
