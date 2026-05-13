@@ -83,6 +83,8 @@ export class TrainingProgramsService {
         // 'program.created_at as createdAt',
         'program.image as imageUrl',
         'g.name as goalName',
+        'g.nameEng as goalNameEng',
+        'd.nameEng as diffNameEng',
         'd.name as diffName',
         'u.nickname as userNickname',
         'u.id as userId',
@@ -196,8 +198,14 @@ export class TrainingProgramsService {
       name: p.name,
       description: p.description,
       imageUrl: this.appService.getImageUrl(p.imageurl),
-      goal: p.goalname,
-      difficulty: p.diffname,
+      goal: {
+        name: p.goalname,
+        nameEng: p.goalnameeng,
+      },
+      difficulty: {
+        name: p.diffname,
+        nameEng: p.diffnameeng,
+      },
       user: {
         nickname: p.usernickname,
       },
@@ -297,13 +305,15 @@ export class TrainingProgramsService {
     };
   }
 
-  async getFavouriteTrainingPrograms(req: CustomRequest) {
+  async getMyFavouriteTrainingPrograms(req: CustomRequest) {
     const user = await this.userRepository.findOne({
       where: { id: req.user.userId },
       relations: [
         'followedProgramsRelations',
         'followedProgramsRelations.user',
         'followedProgramsRelations.trainingProgram',
+        'followedProgramsRelations.trainingProgram.goal',
+        'followedProgramsRelations.trainingProgram.difficulty',
         'followedProgramsRelations.trainingProgram.user',
       ],
     });
@@ -340,6 +350,14 @@ export class TrainingProgramsService {
         description: ftp.trainingProgram.description,
         createdAt: ftp.createdAt,
         imageUrl: this.appService.getImageUrl(ftp.trainingProgram.image),
+        goal: {
+          name: ftp.trainingProgram.goal.name,
+          nameEng: ftp.trainingProgram.goal.nameEng,
+        },
+        difficulty: {
+          name: ftp.trainingProgram.difficulty.name,
+          nameEng: ftp.trainingProgram.difficulty.nameEng,
+        },
         user: {
           id: ftp.trainingProgram.user.id,
           nickname: ftp.trainingProgram.user.nickname,
@@ -422,6 +440,7 @@ export class TrainingProgramsService {
     // Создание и выполнение запроса
     const programs = await this.programRepository.find({
       select: ['id', 'name', 'description', 'userId', 'createdAt', 'image'],
+      relations: ['goal', 'difficulty'],
       where: { userId },
       order: { createdAt: 'desc' },
     });
@@ -455,8 +474,78 @@ export class TrainingProgramsService {
       description: p.description,
       userId: p.userId,
       createdAt: p.createdAt,
+      goal: {
+        name: p.goal.name,
+        nameEng: p.goal.nameEng,
+      },
+      difficulty: {
+        name: p.difficulty.name,
+        nameEng: p.difficulty.nameEng,
+      },
       imageUrl: this.appService.getImageUrl(p.image),
       followersCount: followersMap.get(p.id) || 0,
+    }));
+  }
+
+  async getUserTrainingPrograms(id: string) {
+    // Создание и выполнение запроса
+    const programs = await this.programRepository.find({
+      select: [
+        'id',
+        'name',
+        'description',
+        'userId',
+        'createdAt',
+        'image',
+        'isPublic',
+      ],
+      relations: ['goal', 'difficulty', 'user'],
+      where: { userId: Number(id), isPublic: true },
+      order: { createdAt: 'desc' },
+    });
+
+    if (programs.length === 0) {
+      return [];
+    }
+
+    // Получаем ID всех программ
+    const programIds = programs.map((p) => p.id);
+
+    // Подсчитываем количество подписчиков для каждой программы
+    const followersCounts = await this.followedProgramsRepository
+      .createQueryBuilder('follow')
+      .select('follow.id_training_program', 'programId')
+      .addSelect('COUNT(*)', 'count')
+      .where('follow.id_training_program IN (:...programIds)', { programIds })
+      .groupBy('follow.id_training_program')
+      .getRawMany();
+
+    // Создаём мапу programId → followersCount
+    const followersMap = new Map<number, number>();
+    followersCounts.forEach((item) => {
+      followersMap.set(Number(item.programId), Number(item.count));
+    });
+
+    // Преобразование результата
+    return programs.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      user: {
+        id: p.user.id,
+        nickname: p.user.nickname,
+      },
+      createdAt: p.createdAt,
+      imageUrl: this.appService.getImageUrl(p.image),
+      followersCount: followersMap.get(p.id) || 0,
+      goal: {
+        name: p.goal.name,
+        nameEng: p.goal.nameEng,
+      },
+      difficulty: {
+        name: p.difficulty.name,
+        nameEng: p.difficulty.nameEng,
+      },
     }));
   }
 
@@ -617,8 +706,8 @@ export class TrainingProgramsService {
     imagePath: string | null,
     programId: number,
   ) {
-    // const userId = req.user.userId;
-    const userId = 85;
+    const userId = req.user.userId;
+    // const userId = 85;
 
     const [goal, difficulty] = await Promise.all([
       this.goalRepository.findOneBy({ id: dto.goalId }),
