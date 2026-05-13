@@ -166,14 +166,14 @@ export class TrainingProgramsService {
 
     const sortBy = dto.sortOption || 'new';
 
+    query.addSelect((subQuery) => {
+      return subQuery
+        .select('COUNT(*)')
+        .from('followed_training_programs', 'follow')
+        .where('follow.id_training_program = program.id');
+    }, 'followerscount');
     // Применение сортировки
     if (sortBy === SortOptions.POPULAR) {
-      query.addSelect((subQuery) => {
-        return subQuery
-          .select('COUNT(*)')
-          .from('followed_training_programs', 'follow')
-          .where('follow.id_training_program = program.id');
-      }, 'followerscount');
       query.orderBy('followerscount', 'DESC');
     } else {
       query.orderBy('program.created_at', 'DESC');
@@ -308,6 +308,31 @@ export class TrainingProgramsService {
       ],
     });
 
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
+    }
+
+    const programIds = user.followedProgramsRelations.map(
+      (ftp) => ftp.trainingProgram.id,
+    );
+
+    if (programIds.length === 0) {
+      return [];
+    }
+
+    const followersCounts = await this.followedProgramsRepository
+      .createQueryBuilder('follow')
+      .select('follow.id_training_program', 'programId')
+      .addSelect('COUNT(*)', 'count')
+      .where('follow.id_training_program IN (:...programIds)', { programIds })
+      .groupBy('follow.id_training_program')
+      .getRawMany();
+
+    const followersMap = new Map<number, number>();
+    followersCounts.forEach((item) => {
+      followersMap.set(Number(item.programId), Number(item.count));
+    });
+
     return user?.followedProgramsRelations
       .map((ftp) => ({
         id: ftp.trainingProgram.id,
@@ -319,6 +344,7 @@ export class TrainingProgramsService {
           id: ftp.trainingProgram.user.id,
           nickname: ftp.trainingProgram.user.nickname,
         },
+        followersCount: followersMap.get(ftp.trainingProgram.id) || 0,
       }))
       .sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
   }
@@ -394,20 +420,43 @@ export class TrainingProgramsService {
     // Получение id пользователя из кук
     const userId: number = req.user.userId;
     // Создание и выполнение запроса
-    const program = await this.programRepository.find({
+    const programs = await this.programRepository.find({
       select: ['id', 'name', 'description', 'userId', 'createdAt', 'image'],
       where: { userId },
       order: { createdAt: 'desc' },
     });
 
+    if (programs.length === 0) {
+      return [];
+    }
+
+    // Получаем ID всех программ
+    const programIds = programs.map((p) => p.id);
+
+    // Подсчитываем количество подписчиков для каждой программы
+    const followersCounts = await this.followedProgramsRepository
+      .createQueryBuilder('follow')
+      .select('follow.id_training_program', 'programId')
+      .addSelect('COUNT(*)', 'count')
+      .where('follow.id_training_program IN (:...programIds)', { programIds })
+      .groupBy('follow.id_training_program')
+      .getRawMany();
+
+    // Создаём мапу programId → followersCount
+    const followersMap = new Map<number, number>();
+    followersCounts.forEach((item) => {
+      followersMap.set(Number(item.programId), Number(item.count));
+    });
+
     // Преобразование результата
-    return program.map((p) => ({
+    return programs.map((p) => ({
       id: p.id,
       name: p.name,
       description: p.description,
       userId: p.userId,
       createdAt: p.createdAt,
       imageUrl: this.appService.getImageUrl(p.image),
+      followersCount: followersMap.get(p.id) || 0,
     }));
   }
 
