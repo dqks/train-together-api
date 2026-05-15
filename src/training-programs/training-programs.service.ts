@@ -554,8 +554,8 @@ export class TrainingProgramsService {
     req: CustomRequest,
     image: string | null,
   ) {
-    // const userId = req.user.userId;
-    const userId = 85;
+    const userId = req.user.userId;
+    // const userId = 85;
 
     const [goal, difficulty] = await Promise.all([
       this.goalRepository.findOneBy({ id: dto.goalId }),

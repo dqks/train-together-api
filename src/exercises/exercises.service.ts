@@ -298,8 +298,8 @@ export class ExercisesService {
     dto: UpdateExerciseDto,
     image: string | null,
   ) {
-    const userId = 85;
-    // const userId = req.user.userId
+    // const userId = 85;
+    const userId = req.user.userId;
     console.log(dto);
 
     const data = {

@@ -42,7 +42,7 @@ export class ExercisesController {
   }
 
   @Patch(':id')
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(createImageInterceptor('exercises'))
   updateExercise(
     @Param('id') id: string,
