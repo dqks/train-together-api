@@ -16,4 +16,8 @@ export class FilterExerciseDto {
   @IsNumber()
   @IsPositive()
   equipmentId?: number;
+
+  @IsOptional()
+  @Type(() => String)
+  name?: number;
 }

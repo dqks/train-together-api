@@ -84,6 +84,10 @@ export class ExercisesService {
       query.setParameters(subQuery.getParameters());
     }
 
+    if (filter.name) {
+      query.andWhere(`exercise.name ILIKE '%${filter.name}%'`);
+    }
+
     query.orderBy('exercise.name', 'ASC');
 
     // Выполнение запроса
