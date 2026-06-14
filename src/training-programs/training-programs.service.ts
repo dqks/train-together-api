@@ -264,15 +264,18 @@ export class TrainingProgramsService {
       id: p.id,
       name: p.name,
       isFollowed,
+      isPublic: p.isPublic,
       description: p.description,
       createdAt: p.createdAt,
       imageUrl: this.appService.getImageUrl(p.image),
       followsCount: programFollowsCount,
       goal: {
+        id: p.goal.id,
         name: p.goal.name,
         nameEng: p.goal.nameEng,
       },
       difficulty: {
+        id: p.difficulty.id,
         name: p.difficulty.name,
         nameEng: p.difficulty.nameEng,
       },
