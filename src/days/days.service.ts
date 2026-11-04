@@ -9,4 +9,8 @@ export class DaysService {
     @InjectRepository(Day)
     private dayRepository: Repository<Day>,
   ) {}
+
+  async getAll() {
+    return this.dayRepository.find({ order: { sortOrder: 'ASC' } });
+  }
 }

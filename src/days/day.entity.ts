@@ -12,4 +12,11 @@ export class Day {
     nullable: false,
   })
   name: string;
+
+  @Column({
+    name: 'sort_order',
+    type: 'smallint',
+    nullable: false,
+  })
+  sortOrder: number;
 }

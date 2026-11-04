@@ -218,7 +218,7 @@ export class TrainingProgramsService {
     if (!id || isNaN(id)) {
       throw new BadRequestException('Invalid ID');
     }
-    //Создание запроса
+    //  Создание запроса
     const p = await this.programRepository.findOne({
       where: { id },
       relations: [
@@ -232,6 +232,16 @@ export class TrainingProgramsService {
         'days.exercises.exercise.exerciseMuscles',
         'days.exercises.exercise.exerciseMuscles.muscle',
       ],
+      order: {
+        days: {
+          day: {
+            sortOrder: 'asc',
+          },
+          exercises: {
+            exerciseOrder: 'asc',
+          },
+        },
+      },
     });
 
     // Если программа не найдена или она не публичная,
